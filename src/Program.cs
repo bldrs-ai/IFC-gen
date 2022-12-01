@@ -38,11 +38,19 @@ namespace IFC.Generate
             else if (language == "proto")
             {
                 generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new ProtobufGenerator(), null));
-            } else if (language == "ts")
+            }
+            else if (language == "ts")
             {
-                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new TypescriptGenerator(), 
+                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new TypescriptGenerator(),
                     new TypescriptFunctionsGenerator()));
             }
+            else if (language == "bldrsts")
+            {
+                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new BldrsGenerator(),
+                    null));
+
+            }
+
 
             using (FileStream fs = new FileStream(expressPath, FileMode.Open))
             {
