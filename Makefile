@@ -6,7 +6,10 @@ SCHEMA=$(CURR_DIR)/schemas/IFC.exp
 DEBUG_OUT=$(CURR_DIR)/src/bin/Debug/netcoreapp2.0
 
 default:
+	$(ANTLR) -Dlanguage=CSharp -package Express -o ./src/antlr $(GRAMMAR_IFC)
+	$(ANTLR) -Dlanguage=CSharp -package STEP -o ./lang/csharp/src/antlr $(GRAMMAR_STEP)
 	dotnet build ./src/IFC-gen.csproj
+	dotnet run -p .\src\IFC-gen.csproj -e %SCHEMA% -l bldrsts -o $(OUTDIR)
 
 generate:
 	$(ANTLR) -Dlanguage=CSharp -package Express -o ./src/antlr $(GRAMMAR_IFC)

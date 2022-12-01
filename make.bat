@@ -6,10 +6,12 @@ SET SCHEMA_VERSION=IFC
 SET SCHEMA=%CURR_DIR%\schemas\%SCHEMA_VERSION%.exp
 
 ::csharp:
+	set %1
 	%ANTLR% -Dlanguage=CSharp -package Express -o %CURR_DIR%\src\antlr %GRAMMAR_IFC%
 	%ANTLR% -Dlanguage=CSharp -package STEP -o %CURR_DIR%\lang\csharp\src\antlr %GRAMMAR_STEP%
 	dotnet build .\src\IFC-gen.csproj
-	dotnet run -p .\src\IFC-gen.csproj -e %SCHEMA% -l bldrsts -o .\lang\bldrsts\src
+	echo %OUTDIR%
+	dotnet run -p .\src\IFC-gen.csproj -e %SCHEMA% -l bldrsts -o %OUTDIR%
 
 ::clean:
 	::rmdir /s /q .\lang\csharp\src\antlr
