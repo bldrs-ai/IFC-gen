@@ -291,7 +291,7 @@ export default class SchemaSpecificationIFC implements SchemaSpecification
 
             var modelBuilder = new StringBuilder();
 
-            modelBuilder.AppendLine("import {{IfcComponentTypeNames}} from './schema_ifc.bldrs'");
+            modelBuilder.AppendLine("import {IfcComponentTypeNames} from './schema_ifc.bldrs'");
             modelBuilder.AppendLine("import Entity from '../../core/entity'");
             modelBuilder.AppendLine("");
             modelBuilder.AppendLine("import IfcGloballyUniqueId from './IfcGloballyUniqueId.bldrs'");
