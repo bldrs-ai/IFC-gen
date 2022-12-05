@@ -27,7 +27,7 @@ namespace IFC4.Generators
                 return "";
             }
 
-            return $"\t{data.Name}{(data.IsOptional ? "?" : string.Empty)} : {data.Type};";
+            return $"public readonly {data.Name} : {data.Type} {(data.IsOptional ? " | undefined" : string.Empty)}";
         }
 
         private IEnumerable<string> ExpandPossibleTypes(string baseType)
@@ -119,6 +119,24 @@ namespace IFC4.Generators
             return types;
         }
 
+        public IEnumerable<string> Dependencies(SelectType selectType)
+        {
+            //var parents = entity.ParentsAndSelf().Reverse();
+            //var attrs = parents.SelectMany(p => p.Attributes);
+
+            var result = new List<string>();
+
+            //result.AddRange(AddRelevantTypes(attrs)); // attributes for constructor parameters for parents
+            result.AddRange(selectType.Values); // atributes of self
+            //result.AddRange(this.Supers.Select(s=>s.Name)); // attributes for all sub-types
+            //result.AddRange(entity.Subs.Select(s => s.Name)); // attributes for all super types
+
+            var badTypes = new List<string> { "boolean", "number", "string", "boolean", "Uint8Array" };
+            var types = result.Distinct().Where(t => !badTypes.Contains(t) && t != selectType.Name && t != "IfcNullStyle");
+
+            return types;
+        }
+
         public string EntityString(Entity data)
         {
             componentTypes_.Add(data);
@@ -127,7 +145,7 @@ namespace IFC4.Generators
 
             foreach (var d in Dependencies(data))
             {
-                importBuilder.AppendLine($"import {{{d}}} from \"./{d}.bldrs\"");
+                importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
             }
 
             var super = "BaseIfc";
@@ -139,7 +157,6 @@ namespace IFC4.Generators
             //}
 
 
-            string constructors = string.Empty;
 
             //        constructors = $@"
             //constructor({ConstructorParams(data, false)}) {{
@@ -163,7 +180,7 @@ export default class {data.Name} implements Component< SchemaSpecificationIFC >
 
     public readonly __version__: number = 0;
 
-{data.Properties(SelectData)}{constructors}
+    constructor( {string.Join( ", ", data.Attributes.Where( value => value.ToString() != string.Empty ).Select( value => value.ToString() ) )} ) {{}}
 }}
 
 export class {data.Name}Specification implements ComponentSpecification
@@ -194,14 +211,15 @@ export class {data.Name}Specification implements ComponentSpecification
         public string SimpleTypeString(WrapperType data)
         {
             var badTypes = new List<string> { "boolean", "number", "string", "boolean", "Uint8Array" };
-            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {{{data.WrappedType}}} from \"./{data.WrappedType}.g\"";
+            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {data.WrappedType} from \"./{data.WrappedType}.bldrs\"";
             var result =
 $@"
-import {{BaseIfc}} from ""./BaseIfc""
 {wrappedTypeImport}
 
 // http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
-export type {data.Name} = {WrappedType(data)}";
+type {data.Name} = {WrappedType(data)};
+
+export default {data.Name};";
             return result;
         }
 
@@ -210,10 +228,12 @@ export type {data.Name} = {WrappedType(data)}";
             var result =
 $@"
 //http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
-export enum {data.Name} 
+enum {data.Name} 
 {{
 	{string.Join(",\n\t", data.Values.Select(v => $"{v}=\".{v}.\""))}
-}}
+}};
+
+export default {data.Name};
 ";
             return result;
         }
@@ -343,7 +363,40 @@ export default class SchemaSpecificationIFC implements SchemaSpecification
         }
         public string SelectTypeString(SelectType data)
         {
-            return string.Empty;
+            var containerTypes = new StringBuilder();
+
+
+            var importBuilder = new StringBuilder();
+
+            foreach (var d in Dependencies(data))
+            {
+                importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
+            }
+
+            var result =
+$@"
+{importBuilder.ToString()}
+
+/**
+ * http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
+ */
+
+export default class {data.Name}
+{{
+    public readonly __version__: number = 0;
+
+    constructor( public readonly value: {data.Name}Variant ) {{}}
+}}
+
+export type {data.Name}Type = { string.Join('|', data.Values.Where( value => value != "IfcNullStyle" ).Select( value => $"'{value}'" ) ) };
+
+export type {data.Name}Choices = { string.Join('|', data.Values.Where(value => value != "IfcNullStyle") ) };
+
+export type {data.Name}Variant = ({ string.Join('|', data.Values.Where(value => value != "IfcNullStyle").Select(value => $"{{ type: '{value}'; value: {value} }}")) }) & {{ type: {data.Name}Type; value: {data.Name}Choices }};
+
+";
+
+            return result;
         }
     }
 }
