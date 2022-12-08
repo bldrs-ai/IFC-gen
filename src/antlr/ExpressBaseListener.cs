@@ -34,13 +34,15 @@ using ParserRuleContext = Antlr4.Runtime.ParserRuleContext;
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.7")]
 [System.CLSCompliant(false)]
-public partial class ExpressBaseListener : IExpressListener {
-	/// <summary>
-	/// Enter a parse tree produced by <see cref="ExpressParser.actualParams"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterActualParams([NotNull] ExpressParser.ActualParamsContext context) { }
+#pragma warning disable CS3021 // Type or member does not need a CLSCompliant attribute because the assembly does not have a CLSCompliant attribute
+    public partial class ExpressBaseListener : IExpressListener {
+#pragma warning restore CS3021 // Type or member does not need a CLSCompliant attribute because the assembly does not have a CLSCompliant attribute
+        /// <summary>
+        /// Enter a parse tree produced by <see cref="ExpressParser.actualParams"/>.
+        /// <para>The default implementation does nothing.</para>
+        /// </summary>
+        /// <param name="context">The parse tree.</param>
+        public virtual void EnterActualParams([NotNull] ExpressParser.ActualParamsContext context) { }
 	/// <summary>
 	/// Exit a parse tree produced by <see cref="ExpressParser.actualParams"/>.
 	/// <para>The default implementation does nothing.</para>

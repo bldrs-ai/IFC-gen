@@ -7,8 +7,10 @@ using System.Text;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using IFC4.Generators;
-using NDesk.Options;
+//using NDesk.Options;
+using CommandLine;
 using Express;
+using CommandLine.Text;
 
 namespace IFC.Generate
 {
@@ -20,12 +22,13 @@ namespace IFC.Generate
         private static bool showHelp;
         private static bool outputTokens;
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
-            ParseOptions(args);
-            if (showHelp)
+            bool parseOptionsResult = ParseOptions(args);
+
+            if (!parseOptionsResult)
             {
-                return;
+                return showHelp ? 0 : 1;
             }
 
             var generators = new List<Tuple<ILanguageGenerator, IFunctionsGenerator>>();
@@ -51,7 +54,6 @@ namespace IFC.Generate
 
             }
 
-
             using (FileStream fs = new FileStream(expressPath, FileMode.Open))
             {
                 var input = new AntlrInputStream(fs);
@@ -75,16 +77,20 @@ namespace IFC.Generate
 
                 if (!outputTokens)
                 {
-                    return;
+                    return 0;
                 }
 
                 var tokenStr = new StringBuilder();
+
                 foreach (var t in tokens.GetTokens())
                 {
                     tokenStr.AppendLine(t.ToString());
                 }
+
                 Console.WriteLine(tokenStr);
             }
+
+            return 0;
         }
 
         private static void Generate(Express.ExpressListener listener, string outDir,
@@ -114,42 +120,65 @@ namespace IFC.Generate
             }
         }
 
-        private static void ParseOptions(string[] args)
+        private class Options
         {
-            var p = new OptionSet() {
-                { "e|express=", "The path the express schema.", v => expressPath = v },
-                { "o|output=", "The directory in which the code is generated.", v => outDir = v},
-                { "l|language=", "The target language (csharp)", v => language = v},
-                { "p|tokens", "Output tokens to stdout during parsing.", v => outputTokens = v != null},
-                { "h|help",   v => showHelp = v != null },
-            };
+            [Option('e', "express", HelpText = "The path the express schema.",Required = true)]
+            public string ExpressPath { get; set; } = "";
 
-            List<string> extra;
-            try
-            {
-                extra = p.Parse(args);
-            }
-            catch (OptionException e)
-            {
-                Console.Write("IFC-gen: ");
-                Console.WriteLine(e.Message);
-                Console.WriteLine("Try `IFC-gen --help' for more information.");
-                return;
-            }
+            [Option('o', "output", HelpText = "The directory in which the code is generated.",Required = true)]
+            public string OutputDirectory { get; set; } = "";
 
-            if (showHelp)
-            {
-                ShowHelp(p);
-                return;
-            }
+            [Option('l', "language", HelpText = "The target language (csharp)",Default ="csharp" )]
+            public string Language { get; set; } = "csharp";
+
+            [Option('p',"tokens", HelpText ="Output tokens to stdout during parsing.",Default = false)]
+            public bool Tokens { get; set; } = false;
+
+            [Option('h', "help", Default = false)]
+            public bool ShowHelp { get; set; } = false;
         }
 
-        private static void ShowHelp(OptionSet p)
+        private static bool ParseOptions(string[] args)
         {
-            Console.WriteLine("Usage: IFC-gen [OPTIONS]+");
-            Console.WriteLine();
-            Console.WriteLine("Options:");
-            p.WriteOptionDescriptions(Console.Out);
+            var parserResult = CommandLine.Parser.Default.ParseArguments<Options>(args);
+
+            return parserResult.MapResult(
+                options =>
+                {
+                    expressPath = options.ExpressPath;
+                    outDir = options.OutputDirectory;
+                    language = options.Language;
+                    outputTokens = options.Tokens;
+                    showHelp = options.ShowHelp;
+
+                    if ( showHelp )
+                    {
+
+                        return ShowHelp(parserResult);
+                    }
+
+                    return !showHelp;
+                },
+                _ =>
+                {
+                    return ShowHelp(parserResult);
+                }
+            );
+        }
+
+        private static bool ShowHelp< T >(ParserResult< T > result)
+        {
+            var helpText = HelpText.AutoBuild(result, text =>
+            {
+                text.AdditionalNewLineAfterOption = true;
+                text.Heading = "IFC-gen (bldrs)";
+
+                return text;
+            });
+
+            Console.WriteLine(helpText);
+
+            return false;
         }
     }
 }

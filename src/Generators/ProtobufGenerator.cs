@@ -55,17 +55,24 @@ message {lm}{{
                 // MyTypeList4 - repeated MyType3;
                 if (data.Rank > 1)
                 {
-                    for (var i = 2; i <= data.Rank; i++)
+                    string result = $"repeated {data.Type}List{(data.Rank > 2 ? (data.Rank - 1).ToString() : String.Empty)}";
+
+                    for (int i = 2; i <= data.Rank; i++)
                     {
-                        var listTypeName = $"{data.Type}List{data.Rank}";
+                        var listTypeName = $"{data.Type}List{i}";
+
                         if (!listMessages.Contains(listTypeName))
+                        {
                             listMessages.Add(listTypeName);
-                        var typeNameRank = i == 2 ? string.Empty : (i).ToString();
-                        return $"repeated {listTypeName}{typeNameRank} {data.Name}";
+                        }
                     }
+
+                    return result;
                 }
+
                 return $"repeated {data.Type} {data.Name}";
             }
+
             return $"{data.Type} {data.Name}";
         }
 

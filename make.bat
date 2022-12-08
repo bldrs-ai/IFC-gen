@@ -11,7 +11,7 @@ SET SCHEMA=%CURR_DIR%\schemas\%SCHEMA_VERSION%.exp
 	%ANTLR% -Dlanguage=CSharp -package STEP -o %CURR_DIR%\lang\csharp\src\antlr %GRAMMAR_STEP%
 	dotnet build .\src\IFC-gen.csproj
 	echo %OUTDIR%
-	dotnet run -p .\src\IFC-gen.csproj -e %SCHEMA% -l bldrsts -o %OUTDIR%
+	dotnet run --project .\src\IFC-gen.csproj -e %SCHEMA% -l bldrsts -o %OUTDIR%
 
 ::clean:
 	::rmdir /s /q .\lang\csharp\src\antlr

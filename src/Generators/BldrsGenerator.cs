@@ -148,7 +148,6 @@ namespace IFC4.Generators
                 importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
             }
 
-            var super = "BaseIfc";
             var newMod = string.Empty;
             //if (data.Subs.Any())
             //{
