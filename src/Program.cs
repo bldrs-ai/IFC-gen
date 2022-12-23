@@ -98,9 +98,12 @@ namespace IFC.Generate
         {
             var names = new List<string>();
 
+            generator.TypesData = listener.TypeData;
+
             var sd = listener.TypeData.Where(kvp=>kvp.Value is SelectType).
                                 Select(v=>new {v.Key, v.Value}).
                                 ToDictionary(t => t.Key, t => (SelectType)t.Value);
+
             generator.SelectData = sd;
 
             foreach (var kvp in listener.TypeData)
@@ -118,6 +121,8 @@ namespace IFC.Generate
                 var functionsPath = Path.Combine(outDir, functionsGenerator.FileName);
                 File.WriteAllText(functionsPath, functionsGenerator.Generate(listener.FunctionData.Values));
             }
+
+            generator.TypesData = null;
         }
 
         private class Options

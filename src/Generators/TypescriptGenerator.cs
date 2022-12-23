@@ -11,6 +11,12 @@ namespace IFC4.Generators
     {
         private Dictionary<string,SelectType> selectData = new Dictionary<string, SelectType>();
 
+        /// <summary>
+        /// A map of SelectType by name.
+        /// This must be set before operations which require checking dependencies and attribute types.
+        /// </summary>
+        Dictionary<string, TypeData> TypesData { get; set; }
+
         public Dictionary<string,SelectType> SelectData
         {
             get{return selectData;}

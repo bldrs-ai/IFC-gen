@@ -9,6 +9,12 @@ namespace IFC4.Generators
     public class ProtobufGenerator : ILanguageGenerator
     {
 
+        /// <summary>
+        /// A map of SelectType by name.
+        /// This must be set before operations which require checking dependencies and attribute types.
+        /// </summary>
+        public Dictionary<string, TypeData> TypesData { get; set; }
+
         internal List<string> listMessages = new List<string>();
 
         private Dictionary<string,SelectType> selectData = new Dictionary<string, SelectType>();

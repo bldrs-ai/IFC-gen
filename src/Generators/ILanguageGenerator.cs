@@ -92,6 +92,12 @@ namespace IFC4.Generators
         /// This must be set before operations which require checking dependencies and attribute types.
         /// </summary>
         Dictionary<string,SelectType> SelectData{get;set;}
+
+        /// <summary>
+        /// A map of SelectType by name.
+        /// This must be set before operations which require checking dependencies and attribute types.
+        /// </summary>
+        Dictionary<string, TypeData> TypesData { get; set; }
     }
 
     public interface IFunctionsGenerator

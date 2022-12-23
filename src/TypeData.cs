@@ -182,7 +182,7 @@ namespace Express
     /// <summary>
     /// Base class for types which store a collection of values such as IFC SELECT and ENUM types.
     /// </summary>
-    public abstract class CollectionTypeData : TypeData
+    public abstract class EnumData : TypeData
     {
         /// <summary>
         /// For a TypeData which wraps a Select or an Enum, the Values
@@ -191,7 +191,7 @@ namespace Express
         /// <returns></returns>
         public IEnumerable<string> Values { get; }
 
-        public CollectionTypeData(string name, ILanguageGenerator generator, IEnumerable<string> values) : base(name, generator)
+        public EnumData(string name, ILanguageGenerator generator, IEnumerable<string> values) : base(name, generator)
         {
             this.Values = values;
         }
@@ -234,7 +234,7 @@ namespace Express
     /// <summary>
     /// A CollectionTypeData object stores information about IFC ENUM types.
     /// </summary>
-    public class EnumType : CollectionTypeData
+    public class EnumType : EnumData
     {
         public EnumType(string name, ILanguageGenerator generator, IEnumerable<string> values) : base(name, generator, values) { }
 
@@ -247,7 +247,7 @@ namespace Express
     /// <summary>
     /// A SelectType object stores information about IFC SELECT types.
     /// </summary>
-    public class SelectType : CollectionTypeData
+    public class SelectType : EnumData
     {
         public SelectType(string name, ILanguageGenerator generator, IEnumerable<string> values) : base(name, generator, values) { }
 
