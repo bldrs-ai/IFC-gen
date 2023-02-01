@@ -83,7 +83,7 @@ namespace IFC4.Generators
                 output.Append($"{IDTable.GMap[where]}");
             }
 
-            output.AppendLine($"{indent0}];");
+            output.AppendLine($"{indent0}] );");
             output.AppendLine();
 
             output.Append($"let prefixSumAddress{name} = new Uint32Array( [");
@@ -99,7 +99,7 @@ namespace IFC4.Generators
                 output.Append($"{PrefixSumEncoded[where]}");
             }
 
-            output.AppendLine($"];");
+            output.AppendLine($"] );");
             output.AppendLine();
 
             output.Append($"{indent0}let slotMap{name} = new Int32Array( [");
@@ -115,7 +115,7 @@ namespace IFC4.Generators
                 output.Append($"{IDTable.SlotMap[where]}");
             }
 
-            output.AppendLine($"];");
+            output.AppendLine($"] );");
             output.AppendLine();
             output.Append($"{indent0}let encodedData{name} = (new TextEncoder()).encode( \"");
 

@@ -14,8 +14,8 @@ namespace IFC4.Generators
         {
             var typeIDs = new BlrdrsTypeIDGenerator(types);
 
-            var enumFileName = "entity_types_ifc.bldrs.ts";
-            var enumPath = Path.Combine(directory, enumFileName );
+            var enumFileName = "entity_types_ifc.bldrs";
+            var enumPath = Path.Combine(directory, enumFileName + ".ts" );
             var enumBuilder = new StringBuilder();
 
             typeIDs.GenerateEnum(enumBuilder, "EntityTypesIfc", 0);
