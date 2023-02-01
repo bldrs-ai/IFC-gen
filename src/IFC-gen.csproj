@@ -4,6 +4,13 @@
     <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Generators\CsharpFunctionsGenerator.cs" />
+    <Compile Remove="Generators\CsharpGenerator.cs" />
+    <Compile Remove="Generators\ProtobufGenerator.cs" />
+    <Compile Remove="Generators\TypescriptFunctionsGenerator.cs" />
+    <Compile Remove="Generators\TypescriptGenerator.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.7.1.1" />
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
   </ItemGroup>

@@ -274,6 +274,8 @@ export {modifier}class {data.Name} extends {super} {{
             get { return "g.ts"; }
         }
 
+        Dictionary<string, TypeData> ILanguageGenerator.TypesData { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
         public string ParseSimpleType(ExpressParser.SimpleTypeContext context)
         {
             var type = string.Empty;

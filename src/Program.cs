@@ -33,21 +33,7 @@ namespace IFC.Generate
 
             var generators = new List<Tuple<ILanguageGenerator, IFunctionsGenerator>>();
 
-            if (language == "csharp")
-            {
-                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(
-                    new CsharpLanguageGenerator(), new CsharpFunctionsGenerator()));
-            }
-            else if (language == "proto")
-            {
-                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new ProtobufGenerator(), null));
-            }
-            else if (language == "ts")
-            {
-                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new TypescriptGenerator(),
-                    new TypescriptFunctionsGenerator()));
-            }
-            else if (language == "bldrsts")
+            if (language == "bldrsts")
             {
                 generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new BldrsGenerator(),
                     null));

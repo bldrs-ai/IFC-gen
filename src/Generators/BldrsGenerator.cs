@@ -119,6 +119,26 @@ namespace IFC4.Generators
                 return ExpandMaximumSizes(type) + 2; // 2 byte selector + largest size.
             }
 
+            if ( !TypesData.ContainsKey( type ) )
+            {
+                if (type == "number")
+                {
+                    return 8; // TODO - work out which are integers so we don't have to serialize freakin doubles - CS
+                }
+                else if (type == "boolean")
+                {
+                    return 1;
+                }
+                else if (type == "UInt8Array")
+                {
+                    return 4;
+                }
+                else if (type == "string")
+                {
+                    return 4;
+                }
+            }
+
             var typeData = TypesData[type];
 
             if (typeData is WrapperType wrapper)
@@ -141,7 +161,7 @@ namespace IFC4.Generators
                 }
                 else
                 {
-                    return AttributeSerializationSize( false, 0, wrapper.WrappedType, false )
+                    return AttributeSerializationSize(false, 0, wrapper.WrappedType, false);
                 }
             }
             else if ( typeData is Entity entity )
@@ -351,6 +371,60 @@ export class {data.Name}Specification implements ComponentSpecification
                 return string.Empty;
             }
 
+            if (!TypesData.ContainsKey(type))
+            {
+                return type switch
+                {
+
+                    "boolean" => @"
+    ( () => { 
+        let readValue = from.readUInt8( offset ); 
+        
+        if ( readValue > 2 )
+        {
+            throw new Error( 'Read Invalid Value' );
+        }
+
+        return readValue == 0 ? false : ( readValue == 1 ? true : undefined );
+    })()",
+                    "number" =>
+@"
+    ( () => { 
+        let readValue = from.readDoubleLE( offset ); 
+
+        return Number.isNaN( readValue ) ? undefined : readValue;
+    })()",
+                    "string" => @"
+    ( () => { 
+        let readOffset = from.readUInt32LE( offset ); 
+
+        if ( readOffset == 0 )
+        {
+            return;
+        }
+
+        let stringSize = from.readUInt32LE( readOffset );
+        
+        return from.readString( stringSize );
+    })()",
+
+                    "UInt8Array" => @"
+    ( () => { 
+        let readOffset = from.readUInt32LE( offset ); 
+
+        if ( readOffset == 0 )
+        {
+            return;
+        }
+
+        let stringSize = from.readUInt32LE( readOffset );
+        
+        return from.readBuffer( stringSize );
+    })()",
+                    _ => throw new Exception( "Unknown type requested deserializer string")
+                };
+            }
+
             var typeData = TypesData[type];
 
             if (typeData is WrapperType wrapper)
@@ -402,7 +476,7 @@ export class {data.Name}Specification implements ComponentSpecification
         
         return from.readBuffer( stringSize );
     })()",
-                    _ => SerializerString(false, 0, wrapper.WrappedType, false)
+                    _ => DeserializerString(false, 0, wrapper.WrappedType, false)
                 };
             }
             else if (typeData is Entity entity)
@@ -417,7 +491,7 @@ export class {data.Name}Specification implements ComponentSpecification
         }
         
         return from.readBuffer( stringSize );
-    })()"
+    })()";
             }
             else if (typeData is SelectType select)
             {
@@ -442,6 +516,38 @@ export class {data.Name}Specification implements ComponentSpecification
             if (isGeneric)
             {
                 return string.Empty;
+            }
+
+            if ( !TypesData.ContainsKey(type))
+            {
+                return type switch
+                {
+                    "boolean" => "    to.writeUInt8( ( value === undefined ) ? 3 : ( value ? 1 : 0 ), offset )",
+                    "number" => "    to.writeDoubleLE( ( value === undefined ) ? NaN : value, offset )",
+                    "string" => @"
+    if ( value == undefined ) 
+    {
+        to.writeUInt32LE( 0 );
+    } 
+    else 
+    {
+        to.writeUInt32LE( to.length, offset );
+        to.writeUInt32LE( value.length );          
+        to.writeString( value );          
+    }",
+                    "UInt8Array" => @"
+    if ( value == undefined ) 
+    {
+        to.writeUInt32LE( 0 );
+    } 
+    else 
+    {
+        to.writeUInt32LE( to.length, offset );
+        to.writeUInt32LE( value.length );          
+        to.writeBuffer( value );          
+    }",
+                    _ => throw new Exception("No such type")
+                };
             }
 
             var typeData = TypesData[type];
@@ -576,9 +682,9 @@ export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, off
 }}
 
 export function {data.Name}Deserializer( to: SmartBuffer, offset?: number ): {data.Name} | undefined
-{{{
+{{
 {deserializationBuilder.ToString()}
-}}}";
+}}";
 
             var result =
 $@"
@@ -628,95 +734,99 @@ export default {data.Name};
 
         public void GenerateManifest(string directory, IEnumerable<string> types)
         {
-            var schemaBuilder = new StringBuilder();
+            //var schemaBuilder = new StringBuilder();
 
-            schemaBuilder.AppendLine("import SchemaSpecification from '../../core/schema_specification'");
-            schemaBuilder.AppendLine("import ComponentSpecification from '../../core/component_specification'");
+            //schemaBuilder.AppendLine("import SchemaSpecification from '../../core/schema_specification'");
+            //schemaBuilder.AppendLine("import ComponentSpecification from '../../core/component_specification'");
 
-            foreach (var componentType in componentTypes_.Select(type => type.Name))
-            {
-                schemaBuilder.AppendLine($"import {{{componentType}Specification}} from './{componentType}.bldrs'");
-            }
+            var componentTypeNames = componentTypes_.Select(type => type.Name).ToArray();
 
-            schemaBuilder.AppendLine("");
-            schemaBuilder.AppendLine("export type IFCSchema = 'IFC';");
-            schemaBuilder.AppendLine("");
+//            foreach (var componentType in componentTypeNames)
+//            {
+//                schemaBuilder.AppendLine($"import {{{componentType}Specification}} from './{componentType}.bldrs'");
+//            }
 
-            schemaBuilder.AppendLine($@"
-export default class SchemaSpecificationIFC implements SchemaSpecification
-{{
-    public readonly name: IFCSchema = 'IFC';
+//            schemaBuilder.AppendLine("");
+//            schemaBuilder.AppendLine("export type IFCSchema = 'IFC';");
+//            schemaBuilder.AppendLine("");
+
+//            schemaBuilder.AppendLine($@"
+//export default class SchemaSpecificationIFC implements SchemaSpecification
+//{{
+//    public readonly name: IFCSchema = 'IFC';
     
-    public readonly components : IfcComponentTypeNames[] = [ { string.Join(", ", componentTypes_.Select(componentType => $"'{componentType.Name}'")) } ];
+//    public readonly components : IfcComponentTypeNames[] = [ { string.Join(", ", componentTypes_.Select(componentType => $"'{componentType.Name}'")) } ];
 
-    public readonly specifications : ReadonlyMap< IfcComponentTypeNames, ComponentSpecification >;
+//    public readonly specifications : ReadonlyMap< IfcComponentTypeNames, ComponentSpecification >;
 
-    constructor()
-    {{
-        let localSpecifications = new Map< IfcComponentTypeNames, ComponentSpecification >();
+//    constructor()
+//    {{
+//        let localSpecifications = new Map< IfcComponentTypeNames, ComponentSpecification >();
 
-{componentTypes_.Select(componentType => $"\t\tlocalSpecifications.set( '{componentType.Name}', new {componentType.Name}Specification() );\n").Aggregate( string.Empty, ( left, right ) => left + right )}
-        this.specifications = localSpecifications;
-    }}
-}}");
+//{componentTypes_.Select(componentType => $"\t\tlocalSpecifications.set( '{componentType.Name}', new {componentType.Name}Specification() );\n").Aggregate( string.Empty, ( left, right ) => left + right )}
+//        this.specifications = localSpecifications;
+//    }}
+//}}");
 
-            schemaBuilder.AppendLine($"export type IfcComponentTypeNames = { string.Join('|', componentTypes_.Select(componentType => $"'{componentType.Name}'")) };");
+//            schemaBuilder.AppendLine($"export type IfcComponentTypeNames = { string.Join('|', componentTypes_.Select(componentType => $"'{componentType.Name}'")) };");
 
-            var schemaPath = Path.Combine(directory, "schema_ifc.bldrs.ts");
+//            var schemaPath = Path.Combine(directory, "schema_ifc.bldrs.ts");
 
-            File.WriteAllText(schemaPath, schemaBuilder.ToString());
+//            File.WriteAllText(schemaPath, schemaBuilder.ToString());
 
-            var modelBuilder = new StringBuilder();
+//            var modelBuilder = new StringBuilder();
 
-            modelBuilder.AppendLine("import {IfcComponentTypeNames} from './schema_ifc.bldrs'");
-            modelBuilder.AppendLine("import Entity from '../../core/entity'");
-            modelBuilder.AppendLine("");
-            modelBuilder.AppendLine("import IfcGloballyUniqueId from './IfcGloballyUniqueId.bldrs'");
+//            modelBuilder.AppendLine("import {IfcComponentTypeNames} from './schema_ifc.bldrs'");
+//            modelBuilder.AppendLine("import Entity from '../../core/entity'");
+//            modelBuilder.AppendLine("");
+//            modelBuilder.AppendLine("import IfcGloballyUniqueId from './IfcGloballyUniqueId.bldrs'");
 
-            foreach (var componentType in componentTypes_.Select( type => type.Name ) )
-            {
-                modelBuilder.AppendLine($"import {componentType} from './{componentType}.bldrs'");
-            }
+//            foreach (var componentType in componentTypes_.Select( type => type.Name ) )
+//            {
+//                modelBuilder.AppendLine($"import {componentType} from './{componentType}.bldrs'");
+//            }
 
-            modelBuilder.AppendLine("");
-            modelBuilder.AppendLine("");
-            modelBuilder.AppendLine("export default class ModelIfc");
-            modelBuilder.AppendLine("{");
-            modelBuilder.AppendLine("\tpublic readonly components : IfcComponents = {};");
-            modelBuilder.AppendLine("");
-            modelBuilder.AppendLine("\tpublic readonly entities : Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > > = new Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > >();");
-            modelBuilder.AppendLine("}");
+//            modelBuilder.AppendLine("");
+//            modelBuilder.AppendLine("");
+//            modelBuilder.AppendLine("export default class ModelIfc");
+//            modelBuilder.AppendLine("{");
+//            modelBuilder.AppendLine("\tpublic readonly components : IfcComponents = {};");
+//            modelBuilder.AppendLine("");
+//            modelBuilder.AppendLine("\tpublic readonly entities : Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > > = new Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > >();");
+//            modelBuilder.AppendLine("}");
 
-            modelBuilder.AppendLine("");
+//            modelBuilder.AppendLine("");
 
-            modelBuilder.AppendLine("export interface IfcComponents");
-            modelBuilder.AppendLine("{");
+//            modelBuilder.AppendLine("export interface IfcComponents");
+//            modelBuilder.AppendLine("{");
       
-            foreach ( var componentType in componentTypes_.Select( type => type.Name ) )
-            {
-                modelBuilder.AppendLine($"\t{componentType}? : Map< IfcGloballyUniqueId, {componentType}>;");
-                modelBuilder.AppendLine("");
-            }
+//            foreach ( var componentType in componentTypes_.Select( type => type.Name ) )
+//            {
+//                modelBuilder.AppendLine($"\t{componentType}? : Map< IfcGloballyUniqueId, {componentType}>;");
+//                modelBuilder.AppendLine("");
+//            }
 
-            modelBuilder.AppendLine("}");
+//            modelBuilder.AppendLine("}");
 
-            var modelPath = Path.Combine(directory, "model_ifc.bldrs.ts");
+//            var modelPath = Path.Combine(directory, "model_ifc.bldrs.ts");
 
-            File.WriteAllText(modelPath, modelBuilder.ToString());
+//            File.WriteAllText(modelPath, modelBuilder.ToString());
 
-            var importBuilder = new StringBuilder();
+//            var importBuilder = new StringBuilder();
 
-            importBuilder.AppendLine($"export * from \"./model_ifc.bldrs\"");
-            importBuilder.AppendLine($"export * from \"./schema_ifc.bldrs\"");
+//            importBuilder.AppendLine($"export * from \"./model_ifc.bldrs\"");
+//            importBuilder.AppendLine($"export * from \"./schema_ifc.bldrs\"");
 
-            foreach (var name in types)
-            {
-                importBuilder.AppendLine($"export * from \"./{name}.bldrs\"");
-            }
+//            foreach (var name in types)
+//            {
+//                importBuilder.AppendLine($"export * from \"./{name}.bldrs\"");
+//            }
 
-            var indexPath = Path.Combine(directory, "index.ts");
+//            var indexPath = Path.Combine(directory, "index.ts");
 
-            File.WriteAllText(indexPath, importBuilder.ToString());
+//            File.WriteAllText(indexPath, importBuilder.ToString());
+
+            BldrsStepParserData.GenerateEnumFiles(directory, componentTypeNames);
         }
         public string SelectTypeString(SelectType data)
         {
@@ -755,7 +865,7 @@ export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, off
 {{
     switch
     {
-        
+      ""  
     }
 }}
 ";
