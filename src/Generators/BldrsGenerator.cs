@@ -271,81 +271,83 @@ namespace IFC4.Generators
         {
             componentTypes_.Add(data);
 
-            var importBuilder = new StringBuilder();
+            //            var importBuilder = new StringBuilder();
 
-            foreach (var d in Dependencies(data))
-            {
-                importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
-            }
+            //            foreach (var d in Dependencies(data))
+            //            {
+            //                importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
+            //            }
 
-            var newMod = string.Empty;
-            //if (data.Subs.Any())
-            //{
-            //    super = data.Subs[0].Name; ;
-            //    newMod = "new";
-            //}
-            string superClass = "EntityBase< SchemaSpecificationIFC >";
+            //            var newMod = string.Empty;
+            //            //if (data.Subs.Any())
+            //            //{
+            //            //    super = data.Subs[0].Name; ;
+            //            //    newMod = "new";
+            //            //}
+            //            string superClass = "EntityBase< SchemaSpecificationIFC >";
 
-            if ( data.Subs.Count > 0 )
-            {
-                superClass = data.Subs[ 0 ].Name;
-            }
+            //            if ( data.Subs.Count > 0 )
+            //            {
+            //                superClass = data.Subs[ 0 ].Name;
+            //            }
 
-            string componentTypeNames = $"[{string.Join(", ", data.ParentsAndSelf().Select(value => value.Name))}]";
+            //            string componentTypeNames = $"[{string.Join(", ", data.ParentsAndSelf().Select(value => value.Name))}]";
 
-            string modifiers = data.IsAbstract ? "abstract" : string.Empty;
+            //            string modifiers = data.IsAbstract ? "abstract" : string.Empty;
 
 
-            //        constructors = $@"
-            //constructor({ConstructorParams(data, false)}) {{
-            //    super({BaseConstructorParams(data, false)}){Assignments(data, false)}
-            //}}";
+            //            //        constructors = $@"
+            //            //constructor({ConstructorParams(data, false)}) {{
+            //            //    super({BaseConstructorParams(data, false)}){Assignments(data, false)}
+            //            //}}";
 
-            var result =
-$@"
-import Component from ""../../core/component""
-import ComponentSpecification from ""../../core/component_specification""
-import AttributeSpecification from ""../../core/attribute_specification""
-import SchemaSpecificationIFC from ""./schema_ifc.bldrs""
-import {{ IFCSchema }} from ""./schema_ifc.bldrs""
-{importBuilder.ToString()}
+            //            var result =
+            //$@"
+            //import Component from ""../../core/component""
+            //import ComponentSpecification from ""../../core/component_specification""
+            //import AttributeSpecification from ""../../core/attribute_specification""
+            //import SchemaSpecificationIFC from ""./schema_ifc.bldrs""
+            //import {{ IFCSchema }} from ""./schema_ifc.bldrs""
+            //{importBuilder.ToString()}
 
-/**
- * http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
- */
-export default {modifiers} class {data.Name} extends {superClass} 
-{{    
-    public readonly specification: {data.Name}Specification = {data.Name}Specification.instance;
+            ///**
+            // * http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
+            // */
+            //export default {modifiers} class {data.Name} extends {superClass} 
+            //{{    
+            //    public readonly specification: {data.Name}Specification = {data.Name}Specification.instance;
 
-{string.Join("\n    ", data.Attributes.Where( value => value.ToString() != string.Empty).Select( value => value.ToString() ) ) }
+            //{string.Join("\n    ", data.Attributes.Where( value => value.ToString() != string.Empty).Select( value => value.ToString() ) ) }
 
-    constructor( buffer: SnapshotBuffer< T >, dirtyProvider?: ( entity: Entity< T > ) => void )
-    constructor( fileIDProvider: () => number, dirtyProvider?: ( entity: Entity< T > ) => void )
-    constructor( bufferOrFileIDProvider: SnapshotBuffer< T > | ( () => number ), private readonly dirtyProvider_?: ( entity: Entity< T > ) => void ) 
-    {{
-        super( bufferOrFileIDProvider, dirtyProvider_ );
-    }}
+            //    constructor( buffer: SnapshotBuffer< T >, dirtyProvider?: ( entity: Entity< T > ) => void )
+            //    constructor( fileIDProvider: () => number, dirtyProvider?: ( entity: Entity< T > ) => void )
+            //    constructor( bufferOrFileIDProvider: SnapshotBuffer< T > | ( () => number ), private readonly dirtyProvider_?: ( entity: Entity< T > ) => void ) 
+            //    {{
+            //        super( bufferOrFileIDProvider, dirtyProvider_ );
+            //    }}
 
-}}
+            //}}
 
-export class {data.Name}Specification implements ComponentSpecification
-{{
-    public readonly name: string = '{data.Name}';
+            //export class {data.Name}Specification implements ComponentSpecification
+            //{{
+            //    public readonly name: string = '{data.Name}';
 
-    public readonly required: ReadonlyArray< string > = [ {string.Join( ", ", data.ParentsAndSelf().Select( (superValue)=> $"'{superValue.Name}'" ) )} ];
+            //    public readonly required: ReadonlyArray< string > = [ {string.Join( ", ", data.ParentsAndSelf().Select( (superValue)=> $"'{superValue.Name}'" ) )} ];
 
-    public readonly isAbstract: boolean = {(data.IsAbstract ? "true" : "false" )};
+            //    public readonly isAbstract: boolean = {(data.IsAbstract ? "true" : "false" )};
 
-    public readonly attributes: ReadonlyArray< AttributeSpecification > = 
-    [{string.Join( ", ", data.Attributes.Where( attr => !attr.IsInverse && !attr.IsDerived ).Select( attr => $"\n\t\t{{\n\t\t\tname: '{attr.Name}',\n\t\t\tisCollection: {( attr.IsCollection ? "true" : "false")},\n\t\t\trank: {attr.Rank},\n\t\t\tbaseType: '{attr.Type}',\n\t\t\toptional: {(attr.IsOptional ? "true" : "false")}\n\t\t}}"))}
-    ];
+            //    public readonly attributes: ReadonlyArray< AttributeSpecification > = 
+            //    [{string.Join( ", ", data.Attributes.Where( attr => !attr.IsInverse && !attr.IsDerived ).Select( attr => $"\n\t\t{{\n\t\t\tname: '{attr.Name}',\n\t\t\tisCollection: {( attr.IsCollection ? "true" : "false")},\n\t\t\trank: {attr.Rank},\n\t\t\tbaseType: '{attr.Type}',\n\t\t\toptional: {(attr.IsOptional ? "true" : "false")}\n\t\t}}"))}
+            //    ];
 
-    public readonly schema: IFCSchema = 'IFC';
+            //    public readonly schema: IFCSchema = 'IFC';
 
-    public static readonly instance: {data.Name}Specification = new {data.Name}Specification();
-}}
-";
-            return result;
+            //    public static readonly instance: {data.Name}Specification = new {data.Name}Specification();
+            //}}
+            //";
+            //            return result;
+
+            return "";
         }
 
         private string WrappedType(WrapperType data)
@@ -601,102 +603,105 @@ export class {data.Name}Specification implements ComponentSpecification
 
         public string SimpleTypeString(WrapperType data)
         {
-            var badTypes = new List<string> { "boolean", "number", "string", "Uint8Array" };
-            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {data.WrappedType}, {{{data.WrappedType}Serialize, {data.WrappedType}Deserialize, {data.WrappedType}Size }} from \"./{data.WrappedType}.bldrs\"";
+            //            var badTypes = new List<string> { "boolean", "number", "string", "Uint8Array" };
+            //            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {data.WrappedType}, {{{data.WrappedType}Serialize, {data.WrappedType}Deserialize, {data.WrappedType}Size }} from \"./{data.WrappedType}.bldrs\"";
 
-            uint typeSize = AttributeSerializationSize(false, 0, data.WrappedType, false);
+            //            uint typeSize = AttributeSerializationSize(false, 0, data.WrappedType, false);
 
-            string serializationFunctions =
-                @$"
-export const {data.Name}Size = {typeSize};
+            //            string serializationFunctions =
+            //                @$"
+            //export const {data.Name}Size = {typeSize};
 
-export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, offset?: number ): void
-{{{
-    SerializerString(false, 0, data.WrappedType, false)
-}}}
+            //export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, offset?: number ): void
+            //{{{
+            //    SerializerString(false, 0, data.WrappedType, false)
+            //}}}
 
-export function {data.Name}Deserializer( value?: {data.Name}, from: SnapshotBuffer< SchemaSpecificationIFC >, offset?: number ): void
-{{{
-    DeserializerString(false, 0, data.WrappedType, false)
-}}}";
+            //export function {data.Name}Deserializer( value?: {data.Name}, from: SnapshotBuffer< SchemaSpecificationIFC >, offset?: number ): void
+            //{{{
+            //    DeserializerString(false, 0, data.WrappedType, false)
+            //}}}";
 
-            
-            var result =
-$@"
-import SchemaSpecificationIFC from ""./schema_ifc.bldrs""
-import {{ SnapshotBuffer }} from './ snapshot';
-import {{ SmartBuffer }} from 'smart-buffer';
-{wrappedTypeImport}
 
-// http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
-type {data.Name} = {WrappedType(data)};
+            //            var result =
+            //$@"
+            //import SchemaSpecificationIFC from ""./schema_ifc.bldrs""
+            //import {{ SnapshotBuffer }} from './ snapshot';
+            //import {{ SmartBuffer }} from 'smart-buffer';
+            //{wrappedTypeImport}
 
-{serializationFunctions}
+            //// http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
+            //type {data.Name} = {WrappedType(data)};
 
-export default {data.Name};";
-            return result;
+            //{serializationFunctions}
+
+            //export default {data.Name};";
+            //            return result;
+
+            return "";
         }
 
         public string EnumTypeString(EnumType data)
         {
-            uint typeSize = AttributeSerializationSize(false, 0, data.Name, false);
+            //            uint typeSize = AttributeSerializationSize(false, 0, data.Name, false);
 
-            var items = data.Values.Count();
+            //            var items = data.Values.Count();
 
-            var writer = (items < 254) ? "writeUInt8" : (items < 65534 ? "writeUInt16LE" : "writeUInt32LE");
-            var reader = (items < 254) ? "readUInt8" : (items < 65534 ? "readUInt16LE" : "readUInt32LE");
+            //            var writer = (items < 254) ? "writeUInt8" : (items < 65534 ? "writeUInt16LE" : "writeUInt32LE");
+            //            var reader = (items < 254) ? "readUInt8" : (items < 65534 ? "readUInt16LE" : "readUInt32LE");
 
-            var serializationBuilder = new StringBuilder();
-            var deserializationBuilder = new StringBuilder();
+            //            var serializationBuilder = new StringBuilder();
+            //            var deserializationBuilder = new StringBuilder();
 
-            serializationBuilder.AppendLine("    let writeValue = 0;\n");
-            serializationBuilder.AppendLine("    switch ( value )\n    {");
+            //            serializationBuilder.AppendLine("    let writeValue = 0;\n");
+            //            serializationBuilder.AppendLine("    switch ( value )\n    {");
 
-            deserializationBuilder.AppendLine($"    let readValue = {reader};\n");
-            deserializationBuilder.AppendLine("    switch ( readValue )\n    {");
-            deserializationBuilder.AppendLine("        case 0: { return; }");
+            //            deserializationBuilder.AppendLine($"    let readValue = {reader};\n");
+            //            deserializationBuilder.AppendLine("    switch ( readValue )\n    {");
+            //            deserializationBuilder.AppendLine("        case 0: { return; }");
 
-            int counter = 1;
+            //            int counter = 1;
 
-            foreach (var item in data.Values)
-            {
-                serializationBuilder.AppendLine($@"        case {data.Name}.{item}: {{ writeValue = {counter}; break; }} ");
-                deserializationBuilder.AppendLine($@"        case {counter}: return {data.Name}.{item};");
+            //            foreach (var item in data.Values)
+            //            {
+            //                serializationBuilder.AppendLine($@"        case {data.Name}.{item}: {{ writeValue = {counter}; break; }} ");
+            //                deserializationBuilder.AppendLine($@"        case {counter}: return {data.Name}.{item};");
 
-                ++counter;
-            }
+            //                ++counter;
+            //            }
 
-            deserializationBuilder.AppendLine("    }\n");
-            deserializationBuilder.AppendLine("    throw new Error( 'Invalid value from deserializing enum' );");
+            //            deserializationBuilder.AppendLine("    }\n");
+            //            deserializationBuilder.AppendLine("    throw new Error( 'Invalid value from deserializing enum' );");
 
-            serializationBuilder.AppendLine("    }\n");
-            serializationBuilder.AppendLine($"    {writer}( writeValue, offset );");
+            //            serializationBuilder.AppendLine("    }\n");
+            //            serializationBuilder.AppendLine($"    {writer}( writeValue, offset );");
 
-            string serializationFunctions =
-                @$"
-export const {data.Name}Size = {typeSize};
+            //            string serializationFunctions =
+            //                @$"
+            //export const {data.Name}Size = {typeSize};
 
-export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, offset?: number ): void
-{{
-{serializationBuilder.ToString()}
-}}
+            //export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, offset?: number ): void
+            //{{
+            //{serializationBuilder.ToString()}
+            //}}
 
-export function {data.Name}Deserializer( to: SmartBuffer, offset?: number ): {data.Name} | undefined
-{{
-{deserializationBuilder.ToString()}
-}}";
+            //export function {data.Name}Deserializer( to: SmartBuffer, offset?: number ): {data.Name} | undefined
+            //{{
+            //{deserializationBuilder.ToString()}
+            //}}";
 
-            var result =
-$@"
-//http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
-enum {data.Name} 
-{{
-	{string.Join(",\n\t", data.Values.Select(v => $"{v}=\".{v}.\""))}
-}};
+            //            var result =
+            //$@"
+            ////http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
+            //enum {data.Name} 
+            //{{
+            //	{string.Join(",\n\t", data.Values.Select(v => $"{v}=\".{v}.\""))}
+            //}};
 
-export default {data.Name};
-";
-            return result;
+            //export default {data.Name};
+            //";
+            //            return result;
+            return "";
         }
         public string ParseSimpleType(ExpressParser.SimpleTypeContext context)
         {
@@ -826,51 +831,53 @@ export default {data.Name};
 
 //            File.WriteAllText(indexPath, importBuilder.ToString());
 
-            BldrsStepParserData.GenerateEnumFiles(directory, componentTypeNames);
+            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames);
         }
         public string SelectTypeString(SelectType data)
         {
-            var containerTypes = new StringBuilder();
+//            var containerTypes = new StringBuilder();
 
 
-            var importBuilder = new StringBuilder();
+//            var importBuilder = new StringBuilder();
 
-            foreach (var d in Dependencies(data))
-            {
-                importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
-            }
+//            foreach (var d in Dependencies(data))
+//            {
+//                importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
+//            }
 
-            var selectSize = data.Values.Count();
+//            var selectSize = data.Values.Count();
 
-            var result =
-$@"
-{importBuilder.ToString()}
+//            var result =
+//$@"
+//{importBuilder.ToString()}
 
-/**
- * http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
- */
+///**
+// * http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
+// */
 
-export default class {data.Name}
-{{
-    constructor( public readonly value: {data.Name}Variant ) {{}}
-}}
+//export default class {data.Name}
+//{{
+//    constructor( public readonly value: {data.Name}Variant ) {{}}
+//}}
 
-export type {data.Name}Type = { string.Join('|', data.Values.Where( value => value != "IfcNullStyle" ).Select( value => $"'{value}'" ) ) };
+//export type {data.Name}Type = { string.Join('|', data.Values.Where( value => value != "IfcNullStyle" ).Select( value => $"'{value}'" ) ) };
 
-export type {data.Name}Choices = { string.Join('|', data.Values.Where(value => value != "IfcNullStyle") ) };
+//export type {data.Name}Choices = { string.Join('|', data.Values.Where(value => value != "IfcNullStyle") ) };
 
-export type {data.Name}Variant = ({ string.Join('|', data.Values.Where(value => value != "IfcNullStyle").Select(value => $"{{ type: '{value}'; value: {value} }}")) }) & {{ type: {data.Name}Type; value: {data.Name}Choices }};
+//export type {data.Name}Variant = ({ string.Join('|', data.Values.Where(value => value != "IfcNullStyle").Select(value => $"{{ type: '{value}'; value: {value} }}")) }) & {{ type: {data.Name}Type; value: {data.Name}Choices }};
 
-export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, offset?: number )
-{{
-    switch
-    {
-      ""  
-    }
-}}
-";
+//export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, offset?: number )
+//{{
+//    switch
+//    {
+//      ""  
+//    }
+//}}
+//";
 
-            return result;
+//            return result;
+
+            return "";
         }
     }
 }

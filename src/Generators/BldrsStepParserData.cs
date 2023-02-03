@@ -10,7 +10,7 @@ namespace IFC4.Generators
     public static class BldrsStepParserData
     {
         
-        public static void GenerateEnumFiles(string directory, IEnumerable<string> types)
+        public static void GenerateTypeIDFiles(string directory, IEnumerable<string> types)
         {
             var typeIDs = new BlrdrsTypeIDGenerator(types);
 

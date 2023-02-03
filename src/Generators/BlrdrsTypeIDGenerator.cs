@@ -62,13 +62,19 @@ namespace IFC4.Generators
             output.AppendLine($"export default {name};");
         }
 
-        public void GenerateHashData(StringBuilder output, string name, string enumFile, int indent)
+#nullable enable
+        public void GenerateHashData(StringBuilder output, string name, string? enumFile, int indent)
         {
             string indent0 = new string(' ', indent * 4);
             string indent1 = new string(' ', (indent + 1) * 4);
 
             output.AppendLine("import MinimalPerfectHash from '../../../dependencies/conway-ds/src/indexing/minimal_perfect_hash';");
-            output.AppendLine($"import {name} from './{enumFile}';");
+
+            if (!String.IsNullOrEmpty(enumFile))
+            {
+                output.AppendLine($"import {name} from './{enumFile}';");
+            }
+            
             output.AppendLine();
 
             output.Append($"{indent0}let gMap{name} = new Int32Array( [");
@@ -133,4 +139,5 @@ namespace IFC4.Generators
 
         }
     }
+#nullable disable
 }
