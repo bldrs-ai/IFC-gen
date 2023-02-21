@@ -35,7 +35,7 @@ namespace IFC4.Generators
             }
         }
 
-        public void GenerateEnum(StringBuilder output, string name, int indent)
+        public void GenerateEnum(StringBuilder output, string name, int indent )
         {
             string indent0 = new string(' ', indent * 4);
             string indent1 = new string(' ', (indent + 1) * 4);
@@ -53,8 +53,10 @@ namespace IFC4.Generators
                     throw new Exception($"Slot not found for matching name in perfect hash {Names[where]}");
                 }
 
-                output.AppendLine($"{indent1}{Names[where]} = {where},");
-                output.AppendLine($"{indent1}{Names[where].ToUpper()} = {where},");
+                string elementName = Names[where];
+                string strippedName = elementName.Replace( ".", "" );
+
+                output.AppendLine($"{indent1}{strippedName.ToUpper()} = {where},");
             }
 
             output.AppendLine($"{indent0}}}");
@@ -63,7 +65,7 @@ namespace IFC4.Generators
         }
 
 #nullable enable
-        public void GenerateHashData(StringBuilder output, string name, string? enumFile, int indent)
+        public void GenerateHashData(StringBuilder output, string name, string? enumFile, int indent, bool exportDefault = true)
         {
             string indent0 = new string(' ', indent * 4);
             string indent1 = new string(' ', (indent + 1) * 4);
@@ -135,7 +137,15 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent0}let {name}Search = new MinimalPerfectHash< {name} >( gMap{name}, prefixSumAddress{name}, slotMap{name}, encodedData{name} );");
             output.AppendLine();
-            output.AppendLine($"{indent0}export default {name}Search;");
+
+            if (exportDefault)
+            {
+                output.AppendLine($"{indent0}export default {name}Search;");
+            }
+            else
+            {
+                output.AppendLine($"{indent0}export {{ {name}Search }};");
+            }
 
         }
     }

@@ -18,5 +18,16 @@ namespace Bldrs.Hashing
 
             return hash;
         }
+
+        public static uint Hash24(Span<byte> data, uint hash = 0x811C9DC5)
+        {
+            foreach (byte value in data)
+            {
+                hash ^= (uint)value;
+                hash *= 0x01000193;
+            }
+
+            return ( hash ^ ( hash >> 8 ) ) & 0xFFFFFF;
+        }
     }
 }

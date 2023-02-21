@@ -33,7 +33,7 @@ namespace Bldrs.Hashing
 
             if (d > 0)
             {
-                slot = FNV1A.Hash(key, (uint)d) % (uint)Keys.Count;
+                slot = FNV1A.Hash24(key, (uint)d) % (uint)Keys.Count;
             }
 
             var matchedKey = Keys[(int)slot];
@@ -57,7 +57,12 @@ namespace Bldrs.Hashing
                 throw new Exception("Perfect hash creation failed due to specified size being smaller than actual size");
             }
 
-            uint gSize = Primes.Next((uint)keys.Length + (uint)(keys.Length / 4)) / 5;
+            if ( actualSize > 0xFFFFFF )
+            {
+                throw new Exception("Perfect hash creation failed due to table requiring more than (2^24)-1 elements");
+            }
+
+            uint gSize = Math.Max( Primes.Next((uint)keys.Length + (uint)(keys.Length / 4)) / 5, 1 );
             var buckets = new List<(byte[], uint)>[gSize];
             var gMap = new int[gSize];
             var slots = new int[actualSize];
@@ -89,7 +94,7 @@ namespace Bldrs.Hashing
             {
                 var pattern = buckets[bucketIndex];
 
-                if (pattern.Count == 1)
+                if (pattern.Count <= 1)
                 {
                     break;
                 }
@@ -103,7 +108,7 @@ namespace Bldrs.Hashing
 
                     foreach (var (key, index) in pattern)
                     {
-                        uint slot = FNV1A.Hash(new Span<byte>(key), d) % actualSize;
+                        uint slot = FNV1A.Hash24(new Span<byte>(key), d) % actualSize;
 
                         if (slots[slot] >= 0 || currentSet.Contains(slot))
                         {
@@ -121,7 +126,7 @@ namespace Bldrs.Hashing
 
                         foreach (var (key, index) in pattern)
                         {
-                            uint slot = FNV1A.Hash(new Span<byte>(key), d) % actualSize;
+                            uint slot = FNV1A.Hash24(new Span<byte>(key), d) % actualSize;
 
                             slots[slot] = (int)index;
                         }

@@ -643,65 +643,7 @@ namespace IFC4.Generators
 
         public string EnumTypeString(EnumType data)
         {
-            //            uint typeSize = AttributeSerializationSize(false, 0, data.Name, false);
-
-            //            var items = data.Values.Count();
-
-            //            var writer = (items < 254) ? "writeUInt8" : (items < 65534 ? "writeUInt16LE" : "writeUInt32LE");
-            //            var reader = (items < 254) ? "readUInt8" : (items < 65534 ? "readUInt16LE" : "readUInt32LE");
-
-            //            var serializationBuilder = new StringBuilder();
-            //            var deserializationBuilder = new StringBuilder();
-
-            //            serializationBuilder.AppendLine("    let writeValue = 0;\n");
-            //            serializationBuilder.AppendLine("    switch ( value )\n    {");
-
-            //            deserializationBuilder.AppendLine($"    let readValue = {reader};\n");
-            //            deserializationBuilder.AppendLine("    switch ( readValue )\n    {");
-            //            deserializationBuilder.AppendLine("        case 0: { return; }");
-
-            //            int counter = 1;
-
-            //            foreach (var item in data.Values)
-            //            {
-            //                serializationBuilder.AppendLine($@"        case {data.Name}.{item}: {{ writeValue = {counter}; break; }} ");
-            //                deserializationBuilder.AppendLine($@"        case {counter}: return {data.Name}.{item};");
-
-            //                ++counter;
-            //            }
-
-            //            deserializationBuilder.AppendLine("    }\n");
-            //            deserializationBuilder.AppendLine("    throw new Error( 'Invalid value from deserializing enum' );");
-
-            //            serializationBuilder.AppendLine("    }\n");
-            //            serializationBuilder.AppendLine($"    {writer}( writeValue, offset );");
-
-            //            string serializationFunctions =
-            //                @$"
-            //export const {data.Name}Size = {typeSize};
-
-            //export function {data.Name}Serializer( value?: {data.Name}, to: SmartBuffer, offset?: number ): void
-            //{{
-            //{serializationBuilder.ToString()}
-            //}}
-
-            //export function {data.Name}Deserializer( to: SmartBuffer, offset?: number ): {data.Name} | undefined
-            //{{
-            //{deserializationBuilder.ToString()}
-            //}}";
-
-            //            var result =
-            //$@"
-            ////http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
-            //enum {data.Name} 
-            //{{
-            //	{string.Join(",\n\t", data.Values.Select(v => $"{v}=\".{v}.\""))}
-            //}};
-
-            //export default {data.Name};
-            //";
-            //            return result;
-            return "";
+            return BldrsEnumGenerator.GenerateEnumString(data);
         }
         public string ParseSimpleType(ExpressParser.SimpleTypeContext context)
         {
