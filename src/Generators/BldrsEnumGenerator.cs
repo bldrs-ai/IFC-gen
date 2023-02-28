@@ -12,7 +12,7 @@ namespace IFC4.Generators
     {
         public static string GenerateEnumString( EnumType data )
         {
-            var typeIDGenerator = new BlrdrsTypeIDGenerator(data.Values.Select( name => $".{name}."));
+            var typeIDGenerator = new BlrdrsTypeIDGenerator(data.Values.Select( name => $".{name}."), data.Values.Select( _ => true ) );
 
             var builder = new StringBuilder();
 

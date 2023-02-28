@@ -347,7 +347,7 @@ namespace IFC4.Generators
             //";
             //            return result;
 
-            return "";
+            return BldrsEntityGenerator.EntityString( data, SelectData );
         }
 
         private string WrappedType(WrapperType data)
@@ -686,94 +686,95 @@ namespace IFC4.Generators
             //schemaBuilder.AppendLine("import SchemaSpecification from '../../core/schema_specification'");
             //schemaBuilder.AppendLine("import ComponentSpecification from '../../core/component_specification'");
 
-            var componentTypeNames = componentTypes_.Select(type => type.Name).ToArray();
+            var componentTypeNames = componentTypes_.Select(type => type.Name);
+            var abstractTypeNames = componentTypes_.Select(type => type.IsAbstract);
 
-//            foreach (var componentType in componentTypeNames)
-//            {
-//                schemaBuilder.AppendLine($"import {{{componentType}Specification}} from './{componentType}.bldrs'");
-//            }
+            //            foreach (var componentType in componentTypeNames)
+            //            {
+            //                schemaBuilder.AppendLine($"import {{{componentType}Specification}} from './{componentType}.bldrs'");
+            //            }
 
-//            schemaBuilder.AppendLine("");
-//            schemaBuilder.AppendLine("export type IFCSchema = 'IFC';");
-//            schemaBuilder.AppendLine("");
+            //            schemaBuilder.AppendLine("");
+            //            schemaBuilder.AppendLine("export type IFCSchema = 'IFC';");
+            //            schemaBuilder.AppendLine("");
 
-//            schemaBuilder.AppendLine($@"
-//export default class SchemaSpecificationIFC implements SchemaSpecification
-//{{
-//    public readonly name: IFCSchema = 'IFC';
-    
-//    public readonly components : IfcComponentTypeNames[] = [ { string.Join(", ", componentTypes_.Select(componentType => $"'{componentType.Name}'")) } ];
+            //            schemaBuilder.AppendLine($@"
+            //export default class SchemaSpecificationIFC implements SchemaSpecification
+            //{{
+            //    public readonly name: IFCSchema = 'IFC';
 
-//    public readonly specifications : ReadonlyMap< IfcComponentTypeNames, ComponentSpecification >;
+            //    public readonly components : IfcComponentTypeNames[] = [ { string.Join(", ", componentTypes_.Select(componentType => $"'{componentType.Name}'")) } ];
 
-//    constructor()
-//    {{
-//        let localSpecifications = new Map< IfcComponentTypeNames, ComponentSpecification >();
+            //    public readonly specifications : ReadonlyMap< IfcComponentTypeNames, ComponentSpecification >;
 
-//{componentTypes_.Select(componentType => $"\t\tlocalSpecifications.set( '{componentType.Name}', new {componentType.Name}Specification() );\n").Aggregate( string.Empty, ( left, right ) => left + right )}
-//        this.specifications = localSpecifications;
-//    }}
-//}}");
+            //    constructor()
+            //    {{
+            //        let localSpecifications = new Map< IfcComponentTypeNames, ComponentSpecification >();
 
-//            schemaBuilder.AppendLine($"export type IfcComponentTypeNames = { string.Join('|', componentTypes_.Select(componentType => $"'{componentType.Name}'")) };");
+            //{componentTypes_.Select(componentType => $"\t\tlocalSpecifications.set( '{componentType.Name}', new {componentType.Name}Specification() );\n").Aggregate( string.Empty, ( left, right ) => left + right )}
+            //        this.specifications = localSpecifications;
+            //    }}
+            //}}");
 
-//            var schemaPath = Path.Combine(directory, "schema_ifc.bldrs.ts");
+            //            schemaBuilder.AppendLine($"export type IfcComponentTypeNames = { string.Join('|', componentTypes_.Select(componentType => $"'{componentType.Name}'")) };");
 
-//            File.WriteAllText(schemaPath, schemaBuilder.ToString());
+            //            var schemaPath = Path.Combine(directory, "schema_ifc.bldrs.ts");
 
-//            var modelBuilder = new StringBuilder();
+            //            File.WriteAllText(schemaPath, schemaBuilder.ToString());
 
-//            modelBuilder.AppendLine("import {IfcComponentTypeNames} from './schema_ifc.bldrs'");
-//            modelBuilder.AppendLine("import Entity from '../../core/entity'");
-//            modelBuilder.AppendLine("");
-//            modelBuilder.AppendLine("import IfcGloballyUniqueId from './IfcGloballyUniqueId.bldrs'");
+            //            var modelBuilder = new StringBuilder();
 
-//            foreach (var componentType in componentTypes_.Select( type => type.Name ) )
-//            {
-//                modelBuilder.AppendLine($"import {componentType} from './{componentType}.bldrs'");
-//            }
+            //            modelBuilder.AppendLine("import {IfcComponentTypeNames} from './schema_ifc.bldrs'");
+            //            modelBuilder.AppendLine("import Entity from '../../core/entity'");
+            //            modelBuilder.AppendLine("");
+            //            modelBuilder.AppendLine("import IfcGloballyUniqueId from './IfcGloballyUniqueId.bldrs'");
 
-//            modelBuilder.AppendLine("");
-//            modelBuilder.AppendLine("");
-//            modelBuilder.AppendLine("export default class ModelIfc");
-//            modelBuilder.AppendLine("{");
-//            modelBuilder.AppendLine("\tpublic readonly components : IfcComponents = {};");
-//            modelBuilder.AppendLine("");
-//            modelBuilder.AppendLine("\tpublic readonly entities : Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > > = new Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > >();");
-//            modelBuilder.AppendLine("}");
+            //            foreach (var componentType in componentTypes_.Select( type => type.Name ) )
+            //            {
+            //                modelBuilder.AppendLine($"import {componentType} from './{componentType}.bldrs'");
+            //            }
 
-//            modelBuilder.AppendLine("");
+            //            modelBuilder.AppendLine("");
+            //            modelBuilder.AppendLine("");
+            //            modelBuilder.AppendLine("export default class ModelIfc");
+            //            modelBuilder.AppendLine("{");
+            //            modelBuilder.AppendLine("\tpublic readonly components : IfcComponents = {};");
+            //            modelBuilder.AppendLine("");
+            //            modelBuilder.AppendLine("\tpublic readonly entities : Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > > = new Map< IfcGloballyUniqueId, Entity< IfcComponentTypeNames > >();");
+            //            modelBuilder.AppendLine("}");
 
-//            modelBuilder.AppendLine("export interface IfcComponents");
-//            modelBuilder.AppendLine("{");
-      
-//            foreach ( var componentType in componentTypes_.Select( type => type.Name ) )
-//            {
-//                modelBuilder.AppendLine($"\t{componentType}? : Map< IfcGloballyUniqueId, {componentType}>;");
-//                modelBuilder.AppendLine("");
-//            }
+            //            modelBuilder.AppendLine("");
 
-//            modelBuilder.AppendLine("}");
+            //            modelBuilder.AppendLine("export interface IfcComponents");
+            //            modelBuilder.AppendLine("{");
 
-//            var modelPath = Path.Combine(directory, "model_ifc.bldrs.ts");
+            //            foreach ( var componentType in componentTypes_.Select( type => type.Name ) )
+            //            {
+            //                modelBuilder.AppendLine($"\t{componentType}? : Map< IfcGloballyUniqueId, {componentType}>;");
+            //                modelBuilder.AppendLine("");
+            //            }
 
-//            File.WriteAllText(modelPath, modelBuilder.ToString());
+            //            modelBuilder.AppendLine("}");
 
-//            var importBuilder = new StringBuilder();
+            //            var modelPath = Path.Combine(directory, "model_ifc.bldrs.ts");
 
-//            importBuilder.AppendLine($"export * from \"./model_ifc.bldrs\"");
-//            importBuilder.AppendLine($"export * from \"./schema_ifc.bldrs\"");
+            //            File.WriteAllText(modelPath, modelBuilder.ToString());
 
-//            foreach (var name in types)
-//            {
-//                importBuilder.AppendLine($"export * from \"./{name}.bldrs\"");
-//            }
+            //            var importBuilder = new StringBuilder();
 
-//            var indexPath = Path.Combine(directory, "index.ts");
+            //            importBuilder.AppendLine($"export * from \"./model_ifc.bldrs\"");
+            //            importBuilder.AppendLine($"export * from \"./schema_ifc.bldrs\"");
 
-//            File.WriteAllText(indexPath, importBuilder.ToString());
+            //            foreach (var name in types)
+            //            {
+            //                importBuilder.AppendLine($"export * from \"./{name}.bldrs\"");
+            //            }
 
-            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames);
+            //            var indexPath = Path.Combine(directory, "index.ts");
+
+            //            File.WriteAllText(indexPath, importBuilder.ToString());
+
+            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames);
         }
         public string SelectTypeString(SelectType data)
         {

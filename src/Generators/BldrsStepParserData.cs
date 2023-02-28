@@ -10,9 +10,10 @@ namespace IFC4.Generators
     public static class BldrsStepParserData
     {
         
-        public static void GenerateTypeIDFiles(string directory, IEnumerable<string> types)
+        public static void GenerateTypeIDFiles(string directory, IEnumerable<string> types, IEnumerable<bool> isAbstract)
         {
-            var typeIDs = new BlrdrsTypeIDGenerator(types);
+            var typeIDs = new BlrdrsTypeIDGenerator(types, isAbstract);
+
 
             var enumFileName = "entity_types_ifc.bldrs";
             var enumPath = Path.Combine(directory, enumFileName + ".ts" );
@@ -25,10 +26,16 @@ namespace IFC4.Generators
             var searchPath = Path.Combine(directory, "entity_types_search.bldrs.ts");
             var searchBuilder = new StringBuilder();
 
-
-            typeIDs.GenerateHashData(searchBuilder, "EntitTypesIfc", enumFileName, 0);
+            typeIDs.GenerateHashData(searchBuilder, "EntityTypesIfc", enumFileName, 0);
 
             File.WriteAllText(searchPath, searchBuilder.ToString());
+
+            var schemaFileName = "schema_ifc.bldrs";
+            var schemaPath = Path.Combine(directory, schemaFileName + ".ts");
+            var schemaBuilder = new StringBuilder();
+
+            typeIDs.GenerateSchema(schemaBuilder, "SchemaIfc", 0, "EntityTypesIfc", enumFileName, "EntityTypesIfcSearch", "entity_types_search.bldrs");
+            File.WriteAllText(schemaPath, schemaBuilder.ToString());
         }
     }
 }

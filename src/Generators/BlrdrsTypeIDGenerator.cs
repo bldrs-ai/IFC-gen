@@ -11,12 +11,14 @@ namespace IFC4.Generators
     {
         public readonly MinimalPerfectHash IDTable;
         public readonly string[] Names;
+        public readonly bool[] IsAbstract;
         public readonly byte[][] EncodedNames;
         public readonly int[] PrefixSumEncoded;
 
-        public BlrdrsTypeIDGenerator(IEnumerable<string> names)
+        public BlrdrsTypeIDGenerator(IEnumerable<string> names, IEnumerable<bool> isAbstract)
         {
             Names = names.ToArray();
+            IsAbstract = isAbstract.ToArray();
 
             var ids = names.Select(name => Encoding.UTF8.GetBytes(name.ToUpperInvariant())).ToArray();
 
@@ -33,6 +35,53 @@ namespace IFC4.Generators
             {
                 PrefixSumEncoded[where + 1] = PrefixSumEncoded[where] + IDTable.Keys[where].Length;
             }
+        }
+
+        public void GenerateSchema(StringBuilder output, string name, int indent, string entityTypesName, string entityTypesFile, string entitySearchTypesName, string entitySearchTypesFile )
+        {
+            string indent0 = new string(' ', indent * 4);
+            string indent1 = new string(' ', (indent + 1) * 4);
+
+            output.AppendLine($"{indent0}import {entityTypesName} from './{entityTypesFile}';");
+            output.AppendLine($"{indent0}import {entitySearchTypesName} from './{entitySearchTypesFile}';");
+            output.AppendLine($"{indent0}import StepEntityConstructor from '../../core/step_entity_constructor';");
+            output.AppendLine($"{indent0}import StepEntityBase from '../../core/step_entity_base';");
+            output.AppendLine($"{indent0}import StepEntitySchema from '../../core/step_entity_schema';");
+            output.AppendLine($"{indent0}import StepParser from '../../../dependencies/conway-ds/src/parsing/step/step_parser';");
+
+            for (int where = 0; where < Names.Length; ++where)
+            {
+                if (!IsAbstract[where])
+                {
+                    string localName = Names[where];
+
+                    output.AppendLine($"{indent0}import {localName} from './{localName}.bldrs';");
+                }
+            }
+
+            output.AppendLine($"{indent0}let constructors : ( StepEntityConstructor< {entityTypesName}, StepEntityBase< {entityTypesName} > > | undefined )[]  = [");
+
+            for (int where = 0; where < Names.Length; ++where)
+            {
+                if (!IsAbstract[where])
+                {
+                    string localName = Names[where];
+
+                    output.AppendLine($"{indent1}{localName},");
+                }
+                else
+                {
+                    output.AppendLine($"{indent1}void 0,");
+                }
+            }
+
+            output.AppendLine($"{indent0}];");
+            output.AppendLine();
+            output.AppendLine($"let parser = new StepParser< {entityTypesName} >( {entitySearchTypesName} );");
+            output.AppendLine();
+            output.AppendLine($"let {name} = new StepEntitySchema< {entityTypesName} >( constructors, parser );");
+            output.AppendLine();
+            output.AppendLine($"export default {name};");
         }
 
         public void GenerateEnum(StringBuilder output, string name, int indent )
