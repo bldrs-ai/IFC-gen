@@ -17,7 +17,7 @@ namespace IFC4.Generators
             var result = new List<string>();
 
             //result.AddRange(AddRelevantTypes(attrs)); // attributes for constructor parameters for parents
-            //result.AddRange(AddRelevantTypes(entity.Attributes, selectData)); // atributes of self
+            result.AddRange(AddRelevantTypes(entity.Attributes, selectData)); // atributes of self
             //result.AddRange(this.Supers.Select(s=>s.Name)); // attributes for all sub-types
             result.AddRange(entity.Subs.Select(s => s.Name)); // attributes for all super types
 
@@ -57,28 +57,71 @@ namespace IFC4.Generators
 
             return result;
         }
+        public static uint FieldCount(Entity data)
+        {
+            return (uint)(data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Count());
+        }
 
-        public static string EntityString(Entity data, Dictionary<string, SelectType> selectData )
+        public static uint FieldCountWithParents( Entity data )
+        {
+            uint ownCount = FieldCount(data);
+
+            if ( data.Subs.Count > 0 )
+            {
+                ownCount += FieldCountWithParents(data.Subs[0]);
+            }
+
+            return ownCount;
+        }
+
+        public static string EntityString(Entity data, Dictionary<string, SelectType> selectData, Dictionary< string, TypeData > typeData )
           {
             var importBuilder = new StringBuilder();
+            var propertyBuilder = new StringBuilder();
 
             foreach (var d in Dependencies(data, selectData))
             {
-                importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
+
+                if ( typeData[d] is EnumType )
+                {
+                    importBuilder.AppendLine($"import {d}, {{ {d}DeserializeStep }} from \"./{d}.bldrs\"");
+                }
+                else
+                {
+                    importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
+                }
             }
 
             var newmod = string.Empty;
 
             string superClass = "StepEntityBase< EntityTypesIfc >";
 
+            uint baseFieldCount = 0;
+
             if (data.Subs.Count > 0)
             {
                 superClass = data.Subs[0].Name;
+                baseFieldCount = FieldCountWithParents(data.Subs[0]);
             }
 
             string componenttypenames = $"[{string.Join(", ", data.ParentsAndSelf().Select(value => value.Name))}]";
             string modifiers = data.IsAbstract ? "abstract" : string.Empty;
 
+            bool first = true;
+
+            uint fieldVtableIndex = baseFieldCount;
+
+            foreach ( var attribute in data.Attributes )
+            {
+                if ( !first )
+                {
+                    propertyBuilder.AppendLine();
+                }
+
+                first = false;
+
+                propertyBuilder.AppendLine( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, attribute.Rank, attribute.type, attribute.IsGeneric) );
+            }
 
             //        constructors = $@"
             //constructor({constructorparams(data, false)}) {{
@@ -86,14 +129,13 @@ namespace IFC4.Generators
             //}}";
 
             var result =
-$@"
-
-import EntityTypesIfc from ""./entity_types_ifc.bldrs""
+$@"import EntityTypesIfc from ""./entity_types_ifc.bldrs""
 import SchemaIfc from ""./schema_ifc.bldrs""
 import StepEntityInternalReference from ""../../core/step_entity_internal_reference""
 import StepEntityBase from ""../../core/step_entity_base""
 import StepModelBase from ""../../core/step_model_base""
 import StepEntitySchema from ""../../core/step_entity_schema""
+import {{stepExtractBoolean, stepExtractEnum, stepExtractString, stepExtractOptional, stepExtractBinary, stepExtractReference, stepExtractNumber}} from '../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions';
 {importBuilder.ToString()}
 
 ///**
@@ -109,6 +151,10 @@ export default {modifiers} class {data.Name} extends {superClass}
     {{
         return SchemaIfc;
     }}
+
+{String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"    {BldrsAttributeGenerator.AttributeDataString(attribute)};" ))}
+
+{propertyBuilder.ToString()}
 
     constructor(localID: number, internalReference: StepEntityInternalReference< EntityTypesIfc >, model: StepModelBase< EntityTypesIfc, StepEntityBase< EntityTypesIfc > > )
     {{

@@ -61,7 +61,7 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent0}let constructors : ( StepEntityConstructor< {entityTypesName}, StepEntityBase< {entityTypesName} > > | undefined )[]  = [");
 
-            for (int where = 0; where < Names.Length; ++where)
+            for (int where = 0; where < Names.Length; ++where)  
             {
                 if (!IsAbstract[where])
                 {

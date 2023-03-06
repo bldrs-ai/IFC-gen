@@ -28,7 +28,7 @@ const parser = StepEnumParser.Instance;
 
 export function {data.Name}DeserializeStep( input: Uint8Array, cursor: number, endCursor: number ): {data.Name} | undefined
 {{
-    return parser.parse< {data.Name} >( {data.Name}Search, input, cursor, endCursor );
+    return parser.extract< {data.Name} >( {data.Name}Search, input, cursor, endCursor );
 }}
 
 ");
