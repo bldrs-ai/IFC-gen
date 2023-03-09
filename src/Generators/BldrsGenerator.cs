@@ -31,24 +31,6 @@ namespace IFC4.Generators
             return BldrsAttributeGenerator.AttributeDataString(data);
         }
 
-        private IEnumerable<string> ExpandPossibleTypes(string baseType)
-        {
-            if (!SelectData.ContainsKey(baseType))
-            {
-                // return right away, it's not a select
-                return new List<string> { baseType };
-            }
-
-            var values = SelectData[baseType].Values;
-            var result = new List<string>();
-
-            foreach (var v in values)
-            {
-                result.AddRange(ExpandPossibleTypes(v));
-            }
-
-            return result;
-        }
 
         public string AttributeDataType(bool isCollection, int rank, string type, bool isGeneric)
         {
@@ -56,7 +38,7 @@ namespace IFC4.Generators
             {
                 if (SelectData.ContainsKey(type))
                 {
-                    var unionType = string.Join('|', ExpandPossibleTypes(type));
+                    var unionType = string.Join('|', BldrsSelectGenerator.ExpandPossibleTypes(type, SelectData));
 
                     return $"{string.Join("", Enumerable.Repeat("Array<", rank))}{unionType}{string.Join("", Enumerable.Repeat(">", rank))}";
                 }
@@ -80,7 +62,7 @@ namespace IFC4.Generators
 
             if (SelectData.ContainsKey(type))
             {
-                return string.Join('|', ExpandPossibleTypes(type));
+                return string.Join('|', BldrsSelectGenerator.ExpandPossibleTypes(type, SelectData));
             }
 
             return type;
@@ -97,7 +79,7 @@ namespace IFC4.Generators
 
             foreach (var a in attrs)
             {
-                result.AddRange(ExpandPossibleTypes(a.type));
+                result.AddRange(BldrsSelectGenerator.ExpandPossibleTypes(a.type, SelectData));
             }
 
             return result.Distinct();
@@ -122,7 +104,7 @@ namespace IFC4.Generators
 
         public string SimpleTypeString(WrapperType data)
         {
-            var badTypes = new List<string> { "boolean", "number", "string", "Uint8Array" };
+            var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
             var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {data.WrappedType} from \"./{data.WrappedType}.bldrs\"";
 
             var result =
@@ -145,7 +127,7 @@ $@"
             var type = string.Empty;
             if (context.binaryType() != null)
             {
-                type = "Uint8Array";
+                type = "[Uint8Array, number]";
             }
             else if (context.booleanType() != null)
             {

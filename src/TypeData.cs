@@ -30,6 +30,14 @@ namespace Express
 
         internal string type;
 
+        public string InnerType
+        {
+            get
+            {
+                return type;
+            }
+        }
+
         /// <summary>
         /// The name of the Type that is referenced.
         /// </summary>

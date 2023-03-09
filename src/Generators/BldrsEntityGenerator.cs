@@ -21,7 +21,7 @@ namespace IFC4.Generators
             //result.AddRange(this.Supers.Select(s=>s.Name)); // attributes for all sub-types
             result.AddRange(entity.Subs.Select(s => s.Name)); // attributes for all super types
 
-            var badTypes = new List<string> { "boolean", "number", "string", "Uint8Array" };
+            var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
             var types = result.Distinct().Where(t => !badTypes.Contains(t) && t != entity.Name);
 
             return types;
@@ -33,30 +33,13 @@ namespace IFC4.Generators
 
             foreach (var a in attrs)
             {
-                result.AddRange(ExpandPossibleTypes(a.type, selectData));
+                result.AddRange(BldrsSelectGenerator.ExpandPossibleTypes(a.type, selectData));
             }
 
             return result.Distinct();
         }
 
-        private static IEnumerable<string> ExpandPossibleTypes(string baseType, Dictionary<string, SelectType> selectData)
-        {
-            if (!selectData.ContainsKey(baseType))
-            {
-                // return right away, it's not a select
-                return new List<string> { baseType };
-            }
 
-            var values = selectData[baseType].Values;
-            var result = new List<string>();
-
-            foreach (var v in values)
-            {
-                result.AddRange(ExpandPossibleTypes(v, selectData));
-            }
-
-            return result;
-        }
         public static uint FieldCount(Entity data)
         {
             return (uint)(data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Count());
@@ -120,7 +103,7 @@ namespace IFC4.Generators
 
                 first = false;
 
-                propertyBuilder.AppendLine( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, attribute.Rank, attribute.type, attribute.IsGeneric) );
+                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.type, attribute.IsGeneric) );
             }
 
             //        constructors = $@"
@@ -135,7 +118,7 @@ import StepEntityInternalReference from ""../../core/step_entity_internal_refere
 import StepEntityBase from ""../../core/step_entity_base""
 import StepModelBase from ""../../core/step_model_base""
 import StepEntitySchema from ""../../core/step_entity_schema""
-import {{stepExtractBoolean, stepExtractEnum, stepExtractString, stepExtractOptional, stepExtractBinary, stepExtractReference, stepExtractNumber}} from '../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions';
+import {{stepExtractBoolean, stepExtractEnum, stepExtractString, stepExtractOptional, stepExtractBinary, stepExtractReference, stepExtractNumber, stepExtractInlineElemement, stepExtractArray}} from '../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions';
 {importBuilder.ToString()}
 
 ///**
@@ -153,9 +136,7 @@ export default {modifiers} class {data.Name} extends {superClass}
     }}
 
 {String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"    {BldrsAttributeGenerator.AttributeDataString(attribute)};" ))}
-
 {propertyBuilder.ToString()}
-
     constructor(localID: number, internalReference: StepEntityInternalReference< EntityTypesIfc >, model: StepModelBase< EntityTypesIfc, StepEntityBase< EntityTypesIfc > > )
     {{
         super( localID, internalReference, model );
