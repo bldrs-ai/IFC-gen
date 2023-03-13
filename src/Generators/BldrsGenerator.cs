@@ -105,7 +105,7 @@ namespace IFC4.Generators
         public string SimpleTypeString(WrapperType data)
         {
             var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
-            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {data.WrappedType} from \"./{data.WrappedType}.bldrs\"";
+            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {{ {data.WrappedType} }} from \"./{data.WrappedType}.bldrs\"";
 
             var result =
 $@"
@@ -114,7 +114,7 @@ $@"
     // http://www.buildingsmart-tech.org/ifc/IFC4/final/html/link/{data.Name.ToLower()}.htm
     type {data.Name} = {WrappedType(data)};
 
-    export default {data.Name};";
+    export {{ {data.Name} }};";
             return result;
         }
 
@@ -251,7 +251,7 @@ $@"
 
             //            File.WriteAllText(indexPath, importBuilder.ToString());
 
-            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames);
+            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames, TypesData);
         }
         public string SelectTypeString(SelectType data)
         {

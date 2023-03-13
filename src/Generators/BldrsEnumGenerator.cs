@@ -16,7 +16,7 @@ namespace IFC4.Generators
 
             var builder = new StringBuilder();
 
-            typeIDGenerator.GenerateEnum(builder, data.Name, 0);
+            typeIDGenerator.GenerateEnum(builder, data.Name, 0, false);
             builder.AppendLine();
             typeIDGenerator.GenerateHashData(builder, data.Name, null, 0, false);
             builder.AppendLine();

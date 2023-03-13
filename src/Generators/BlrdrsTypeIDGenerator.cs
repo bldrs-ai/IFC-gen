@@ -1,4 +1,5 @@
 ﻿using Bldrs.Hashing;
+using Express;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,6 +38,35 @@ namespace IFC4.Generators
             }
         }
 
+        public void GenerateInternal(StringBuilder output, Dictionary<string, TypeData> typesData )
+        {
+            foreach (string name in typesData.Where(nameType => { return nameType.Value is WrapperType; }).OrderBy(nameType => nameType.Key).Select(nameType => nameType.Key))
+            {
+                output.AppendLine($"export {{ {name} }} from './{name}.bldrs';");
+            }
+
+            foreach ( string name in typesData.Where(nameType => { return nameType.Value is EnumData && !(nameType.Value is SelectType); }).OrderBy(nameType => nameType.Key).Select( nameType => nameType.Key ) )
+            { 
+                output.AppendLine($"export {{ {name}, {name}DeserializeStep }} from './{name}.bldrs';");
+            }
+
+            foreach ( string name in Names.OrderBy( name =>
+                {
+                    var typeData = typesData[name];
+
+                    if (typeData is Entity entity)
+                    {
+                        return entity.Parents().Count();
+                    }
+
+                    return 0;
+
+                }))
+            {
+                output.AppendLine($"export {{ {name} }} from './{name}.bldrs';");
+            }
+        }
+
         public void GenerateSchema(StringBuilder output, string name, int indent, string entityTypesName, string entityTypesFile, string entitySearchTypesName, string entitySearchTypesFile )
         {
             string indent0 = new string(' ', indent * 4);
@@ -55,7 +85,7 @@ namespace IFC4.Generators
                 {
                     string localName = Names[where];
 
-                    output.AppendLine($"{indent0}import {localName} from './{localName}.bldrs';");
+                    output.AppendLine($"{indent0}import {{ {localName} }} from './index';");
                 }
             }
 
@@ -84,7 +114,7 @@ namespace IFC4.Generators
             output.AppendLine($"export default {name};");
         }
 
-        public void GenerateEnum(StringBuilder output, string name, int indent )
+        public void GenerateEnum(StringBuilder output, string name, int indent, bool isDefault )
         {
             string indent0 = new string(' ', indent * 4);
             string indent1 = new string(' ', (indent + 1) * 4);
@@ -110,7 +140,14 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent0}}}");
 
-            output.AppendLine($"export default {name};");
+            if ( isDefault )
+            {
+                output.AppendLine($"export default {name};");
+            }
+            else
+            {
+                output.AppendLine($"export {{ {name} }};");
+            }
         }
 
 #nullable enable

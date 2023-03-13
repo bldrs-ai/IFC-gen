@@ -45,13 +45,13 @@ $@"            if ( value === void 0 )
             else
             {{
                 return value;
-            }}":
+            }}": (!usePrevCursor ?
 $@"            if ( value === void 0 )
             {{                
                 throw new Error( 'Value in STEP was incorrectly typed' );
             }};
 
-            return value;";
+            return value;" : "return value;" );
 
             if (isCollection)
             {
@@ -121,7 +121,7 @@ $@"            if ( value === void 0 )
             else if (typeData is Entity entity)
             {
                 var entityPostFix = data.IsOptional && useVtable ?
-$@"            if ( value === void 0 || !( value instanceof {type} ) )
+$@"            if ( !( value instanceof {type} ) )
             {{
                 if ( stepExtractOptional( buffer, cursor, endCursor ) !== null )
                 {{
@@ -133,13 +133,19 @@ $@"            if ( value === void 0 || !( value instanceof {type} ) )
             else
             {{
                 return value;
-            }}" :
-$@"            if ( value === void 0 || !( value instanceof {type} ) )
+            }}" : ( !usePrevCursor ?
+$@"            if ( !( value instanceof {type} ) )
             {{                
                 throw new Error( 'Value in STEP was incorrectly typed for field' );
             }};
 
-            return value;";
+            return value;" :
+$@"            if ( !( value instanceof {type} ) )
+            {{                
+                return (void 0);
+            }};
+
+            return value;");
 
                 return @$"{commonPrefix}
             let expressID = stepExtractReference( buffer, cursor, endCursor );
@@ -150,7 +156,7 @@ $@"            if ( value === void 0 || !( value instanceof {type} ) )
             else if (typeData is SelectType select)
             {
                 return @$"{commonPrefix}
-            let value = { string.Join( " ?? ", BldrsSelectGenerator.ExpandPossibleTypes(type, selectTypes).Select( innerType => $"( () => {{ try {{ {Deserialization( data, vtableOffsset, typesData, selectTypes, false, 0, innerType, isGeneric, false, indent + 2, true).ReplaceLineEndings(Environment.NewLine +  String.Join( "", Enumerable.Repeat( "    ", indent + 2 ) ) ) } }} catch( e ) {{ return; }} }} )()" ) ) };
+            let value = { string.Join( " ??\n", BldrsSelectGenerator.ExpandPossibleTypes(type, selectTypes).Select( innerType => $"( () => {{ {Deserialization( data, vtableOffsset, typesData, selectTypes, false, 0, innerType, isGeneric, false, indent + 2, true).ReplaceLineEndings(Environment.NewLine +  String.Join( "", Enumerable.Repeat( "    ", indent + 2 ) ) ) } }} )()" ) ) };
 
 {commonPostfix}";
             }

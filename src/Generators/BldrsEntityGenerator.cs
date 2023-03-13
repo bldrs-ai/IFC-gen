@@ -11,15 +11,19 @@ namespace IFC4.Generators
     {
         public static IEnumerable<string> Dependencies(Entity entity, Dictionary<string, SelectType> selectData)
         {
-            //var parents = entity.ParentsAndSelf().Reverse();
-            //var attrs = parents.SelectMany(p => p.Attributes);
+         //   var parents = entity.ParentsAndSelf().Reverse();
+       //     var attrs = parents.SelectMany(p => p.Attributes);
 
             var result = new List<string>();
 
-            //result.AddRange(AddRelevantTypes(attrs)); // attributes for constructor parameters for parents
-            result.AddRange(AddRelevantTypes(entity.Attributes, selectData)); // atributes of self
+            if (entity.Subs.Count > 0)
+            {
+                result.Add( entity.Subs[ 0 ].Name ); // attributes for all super types
+            }
+            //result.AddRange(entity.Supers.Select(s => s.Name)); // attributes for all super types
+        //    result.AddRange(AddRelevantTypes(attrs, selectData)); // attributes for constructor parameters for parents
+            result.AddRange(AddRelevantTypes(entity.Attributes.Where( attr => !attr.IsDerived && !attr.IsInverse ), selectData)); // atributes of self
             //result.AddRange(this.Supers.Select(s=>s.Name)); // attributes for all sub-types
-            result.AddRange(entity.Subs.Select(s => s.Name)); // attributes for all super types
 
             var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
             var types = result.Distinct().Where(t => !badTypes.Contains(t) && t != entity.Name);
@@ -67,11 +71,11 @@ namespace IFC4.Generators
 
                 if ( typeData[d] is EnumType )
                 {
-                    importBuilder.AppendLine($"import {d}, {{ {d}DeserializeStep }} from \"./{d}.bldrs\"");
+                    importBuilder.AppendLine($"import {{ {d}, {d}DeserializeStep }} from \"./index\"");
                 }
                 else
                 {
-                    importBuilder.AppendLine($"import {d} from \"./{d}.bldrs\"");
+                    importBuilder.AppendLine($"import {{ {d} }} from \"./index\"");
                 }
             }
 
@@ -112,27 +116,22 @@ namespace IFC4.Generators
             //}}";
 
             var result =
-$@"import EntityTypesIfc from ""./entity_types_ifc.bldrs""
-import SchemaIfc from ""./schema_ifc.bldrs""
+$@"
+{importBuilder.ToString()}
+import EntityTypesIfc from ""./entity_types_ifc.bldrs""
 import StepEntityInternalReference from ""../../core/step_entity_internal_reference""
 import StepEntityBase from ""../../core/step_entity_base""
 import StepModelBase from ""../../core/step_model_base""
-import StepEntitySchema from ""../../core/step_entity_schema""
 import {{stepExtractBoolean, stepExtractEnum, stepExtractString, stepExtractOptional, stepExtractBinary, stepExtractReference, stepExtractNumber, stepExtractInlineElemement, stepExtractArray}} from '../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions';
-{importBuilder.ToString()}
+
 
 ///**
 // * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */
-export default {modifiers} class {data.Name} extends {superClass} 
+export {modifiers} class {data.Name} extends {superClass} 
 {{    
     public get type(): EntityTypesIfc
     {{
         return EntityTypesIfc.{data.Name.ToUpperInvariant()};
-    }}
-
-    public get schema(): StepEntitySchema< EntityTypesIfc >
-    {{
-        return SchemaIfc;
     }}
 
 {String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"    {BldrsAttributeGenerator.AttributeDataString(attribute)};" ))}
