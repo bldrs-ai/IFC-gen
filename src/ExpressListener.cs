@@ -218,7 +218,7 @@ namespace Express
 								name = derAttr.deriveDef().attrDef().Path().GetText();
 							}
 							var type = ParseCollectionTypeSel(derAttr.deriveDef().collectionTypeSel(), ref rank, ref isCollection, ref isGeneric);
-							var ad = new AttributeData(generator, name, type, rank, isCollection, isGeneric, true, false, false);
+							var ad = new AttributeData(generator, name, type, rank, isCollection, isGeneric, true, false, false, derAttr.GetText());
 							entity.Attributes.Add(ad);
 						}
 						else if(derAttr.derivedRedef() != null)
@@ -232,7 +232,7 @@ namespace Express
 								name = derAttr.derivedRedef().attrRef().Path().GetText();
 							}
 							var type = ParseCollectionTypeSel(derAttr.derivedRedef().collectionTypeSel(), ref rank, ref isCollection, ref isGeneric);
-							var ad = new AttributeData(generator, name, type, rank, isCollection, isGeneric, true, false, false);
+							var ad = new AttributeData(generator, name, type, rank, isCollection, isGeneric, true, false, false, derAttr.GetText());
 							entity.Attributes.Add(ad);
 						}
 					}

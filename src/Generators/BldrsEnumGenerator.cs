@@ -12,7 +12,7 @@ namespace IFC4.Generators
     {
         public static string GenerateEnumString( EnumType data )
         {
-            var typeIDGenerator = new BlrdrsTypeIDGenerator(data.Values.Select( name => $".{name}."), data.Values.Select( _ => true ) );
+            var typeIDGenerator = new BlrdrsTypeIDGenerator( data.Values.Select( name => $".{name}."), data.Values.Select( _ => true ) );
 
             var builder = new StringBuilder();
 
@@ -30,7 +30,6 @@ export function {data.Name}DeserializeStep( input: Uint8Array, cursor: number, e
 {{
     return parser.extract< {data.Name} >( {data.Name}Search, input, cursor, endCursor );
 }}
-
 ");
 
             return builder.ToString();

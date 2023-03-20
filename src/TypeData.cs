@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime.Misc;
 using IFC4.Generators;
+using System.Text.RegularExpressions;
 
 namespace Express
 {
@@ -126,22 +127,37 @@ namespace Express
         /// <returns></returns>
         public bool IsOptional { get; }
 
-        public AttributeData(ILanguageGenerator generator, string name, string type, int rank, bool isCollection, bool isGeneric, bool isDerived = false, bool isOptional = false, bool isInverse = false) : 
+        public AttributeData(ILanguageGenerator generator, string name, string type, int rank, bool isCollection, bool isGeneric, bool isDerived = false, bool isOptional = false, bool isInverse = false, string fullRule = "") : 
             base(generator, name, isCollection, rank, isGeneric, type)
         {
             this.IsDerived = isDerived;
             this.IsOptional = isOptional;
             this.IsInverse = isInverse;
+            this.DerivedExpression = String.Empty;
+
+            if (isDerived)
+            {
+                string afterAssignment = fullRule.Split(":=").Last();
+
+                DerivedExpression = afterAssignment;
+
+                Console.WriteLine(afterAssignment);
+            }
 
             // A derived attribute which replaces a base class's version of
             // the attribute will have a name that is a path to the 
             // parent class' attribute of the form SELF\IfcNamedUnit.Dimensions.
-            if(isDerived && Name.Contains("SELF\\"))
+            if (isDerived && name.Contains("SELF\\"))
             {
+
+
                 HidesParentAttributeOfSameName = true;
                 Name = Name.Split('.').Last();
+
             }
         }
+
+        public string DerivedExpression { get; }
 
         public override string ToString()
         {

@@ -22,7 +22,7 @@ namespace IFC4.Generators
             }
             //result.AddRange(entity.Supers.Select(s => s.Name)); // attributes for all super types
         //    result.AddRange(AddRelevantTypes(attrs, selectData)); // attributes for constructor parameters for parents
-            result.AddRange(AddRelevantTypes(entity.Attributes.Where( attr => !attr.IsDerived && !attr.IsInverse ), selectData)); // atributes of self
+            result.AddRange(AddRelevantTypes(entity.Attributes.Where( attr => /*(!attr.IsDerived || attr.HidesParentAttributeOfSameName) &&*/ !attr.IsInverse ), selectData)); // atributes of self
             //result.AddRange(this.Supers.Select(s=>s.Name)); // attributes for all sub-types
 
             var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
@@ -107,7 +107,7 @@ namespace IFC4.Generators
 
                 first = false;
 
-                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.type, attribute.IsGeneric) );
+                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric) );
             }
 
             //        constructors = $@"
@@ -122,8 +122,8 @@ import EntityTypesIfc from ""./entity_types_ifc.bldrs""
 import StepEntityInternalReference from ""../../core/step_entity_internal_reference""
 import StepEntityBase from ""../../core/step_entity_base""
 import StepModelBase from ""../../core/step_model_base""
-import {{stepExtractBoolean, stepExtractEnum, stepExtractString, stepExtractOptional, stepExtractBinary, stepExtractReference, stepExtractNumber, stepExtractInlineElemement, stepExtractArray}} from '../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions';
-
+import {{stepExtractBoolean, stepExtractEnum, stepExtractString, stepExtractOptional, stepExtractBinary, stepExtractReference, stepExtractNumber, stepExtractInlineElemement, stepExtractArray, NVL, HIINDEX, SIZEOF}} from '../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions';
+import {{IfcBaseAxis, IfcBooleanChoose, IfcBuild2Axes, IfcBuildAxes, IfcConstraintsParamBSpline, IfcConvertDirectionInto2D, IfcCorrectDimensions, IfcCorrectFillAreaStyle, IfcCorrectLocalPlacement, IfcCorrectObjectAssignment, IfcCorrectUnitAssignment, IfcCrossProduct, IfcCurveDim, IfcDeriveDimensionalExponents, IfcDimensionsForSiUnit, IfcDotProduct, IfcFirstProjAxis, IfcListToArray, IfcLoopHeadToTail, IfcMakeArrayOfArray, IfcMlsTotalThickness, IfcNormalise, IfcOrthogonalComplement, IfcPathHeadToTail, IfcSameAxis2Placement, IfcSameCartesianPoint, IfcSameDirection, IfcSameValidPrecision, IfcSameValue, IfcScalarTimesVector, IfcSecondProjAxis, IfcShapeRepresentationTypes, IfcTaperedSweptAreaProfiles, IfcTopologyRepresentationTypes, IfcUniqueDefinitionNames, IfcUniquePropertyName, IfcUniquePropertySetNames, IfcUniqueQuantityNames, IfcVectorDifference, IfcVectorSum }} from ""../../core/ifc/ifc_functions""
 
 ///**
 // * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */
@@ -134,7 +134,7 @@ export {modifiers} class {data.Name} extends {superClass}
         return EntityTypesIfc.{data.Name.ToUpperInvariant()};
     }}
 
-{String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"    {BldrsAttributeGenerator.AttributeDataString(attribute)};" ))}
+{String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"    {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)};" ))}
 {propertyBuilder.ToString()}
     constructor(localID: number, internalReference: StepEntityInternalReference< EntityTypesIfc >, model: StepModelBase< EntityTypesIfc, StepEntityBase< EntityTypesIfc > > )
     {{
@@ -142,24 +142,6 @@ export {modifiers} class {data.Name} extends {superClass}
     }}
 }}
 ";
-//export class {data.name}specification implements componentspecification
-//{{
-//    public readonly name: string = '{data.name}';
-
-//    public readonly required: readonlyarray< string > = [ {string.join(", ", data.parentsandself().select((supervalue) => $"'{supervalue.name}'"))} ];
-
-//    public readonly isabstract: boolean = {(data.isabstract ? "true" : "false")};
-
-//    public readonly attributes: readonlyarray< attributespecification > = 
-//    [{string.join(", ", data.attributes.where(attr => !attr.isinverse && !attr.isderived).select(attr => $"\n\t\t{{\n\t\t\tname: '{attr.name}',\n\t\t\tiscollection: {(attr.iscollection ? "true" : "false")},\n\t\t\trank: {attr.rank},\n\t\t\tbasetype: '{attr.type}',\n\t\t\toptional: {(attr.isoptional ? "true" : "false")}\n\t\t}}"))}
-//    ];
-
-//    public readonly schema: ifcschema = 'ifc';
-
-//    public static readonly instance: {data.name}specification = new {data.name}specification();
-//}}
-//";
-//            return result;
 
             return result;
         }

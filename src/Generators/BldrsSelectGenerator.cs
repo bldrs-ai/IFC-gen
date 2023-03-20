@@ -27,5 +27,10 @@ namespace IFC4.Generators
 
             return result;
         }
+
+        public static string GenerateSelectType(SelectType data, Dictionary< string, SelectType> selectTypes)
+        {
+            return "";
+        }
     }
 }

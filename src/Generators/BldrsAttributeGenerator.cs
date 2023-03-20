@@ -9,9 +9,23 @@ namespace IFC4.Generators
 {
     public static class BldrsAttributeGenerator
     {
-        public static string AttributeDataString(AttributeData data)
+        public static string AttributeDataString(AttributeData data, Dictionary<string, TypeData> typesData)
         {
-            return $"private {data.Name}_? : {data.Type}{(data.IsOptional ? " | null" : "")}";
+            var type = data.InnerType;
+            
+            if ( typesData.TryGetValue( type, out var typeData ) && typeData is WrapperType wrapper)
+            {
+                while (typesData.TryGetValue(wrapper.WrappedType, out var innerTypeData) && innerTypeData is WrapperType innerWrapper)
+                {
+                    wrapper = innerWrapper;
+                }
+
+                return $"private {data.Name}_? : {string.Join("", Enumerable.Repeat("Array< ", Math.Max( data.Rank, wrapper.Rank )))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(data.Rank, wrapper.Rank)))}{(data.IsOptional ? " | null" : "")}";
+            }
+            else
+            {
+                return $"private {data.Name}_? : {data.Type}{(data.IsOptional ? " | null" : "")}";
+            }
         }
 
         public static string Deserialization( AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, bool isCollection, int rank, string type, bool isGeneric, bool useVtable = true, int indent = 0, bool usePrevCursor = false )
@@ -65,7 +79,21 @@ $@"            if ( value === void 0 )
                 }
                 else
                 {
-                    valueType = $"{string.Join("", Enumerable.Repeat("Array<", rank))}{type}{string.Join("", Enumerable.Repeat(">", rank))}";
+
+                    if (typesData.TryGetValue(type, out var localTypeData) && localTypeData is WrapperType localWrapper)
+                    {
+                        while (typesData.TryGetValue(localWrapper.WrappedType, out var innerTypeData) && innerTypeData is WrapperType innerWrapper)
+                        {
+                            localWrapper = innerWrapper;
+                        }
+
+                        valueType = $"{string.Join("", Enumerable.Repeat("Array<", rank))}{localWrapper.WrappedType}{string.Join("", Enumerable.Repeat(">", rank))}";
+                    }
+                    else
+                    {
+                        valueType = $"{string.Join("", Enumerable.Repeat("Array<", rank))}{type}{string.Join("", Enumerable.Repeat(">", rank))}";
+                    }
+
                 }
 
                     return @$"{commonPrefix}
@@ -116,9 +144,9 @@ $@"            if ( value === void 0 )
 
             if (typeData is WrapperType wrapper)
             {
-                return Deserialization( data, vtableOffsset, typesData, selectTypes, wrapper.IsCollectionType, wrapper.Rank, wrapper.WrappedType, isGeneric, useVtable, indent, usePrevCursor );
+                return Deserialization(data, vtableOffsset, typesData, selectTypes, wrapper.IsCollectionType, wrapper.Rank, wrapper.WrappedType, isGeneric, useVtable, indent, usePrevCursor);
             }
-            else if (typeData is Entity entity)
+            else if (typeData is Entity)
             {
                 var entityPostFix = data.IsOptional && useVtable ?
 $@"            if ( !( value instanceof {type} ) )
@@ -149,16 +177,57 @@ $@"            if ( !( value instanceof {type} ) )
 
                 return @$"{commonPrefix}
             let expressID = stepExtractReference( buffer, cursor, endCursor );
-            let value     = expressID !== void 0 ? this.model.getElementByExpressID( expressID ) : this.model.getInlineElementByAddress( stepExtractInlineElemement( buffer, cursor, endCursor ) );           
+            let value = expressID !== void 0 ? this.model.getElementByExpressID( expressID ) : this.model.getInlineElementByAddress( stepExtractInlineElemement( buffer, cursor, endCursor ) );           
 
 {entityPostFix}";
             }
             else if (typeData is SelectType select)
             {
-                return @$"{commonPrefix}
-            let value = { string.Join( " ??\n", BldrsSelectGenerator.ExpandPossibleTypes(type, selectTypes).Select( innerType => $"( () => {{ {Deserialization( data, vtableOffsset, typesData, selectTypes, false, 0, innerType, isGeneric, false, indent + 2, true).ReplaceLineEndings(Environment.NewLine +  String.Join( "", Enumerable.Repeat( "    ", indent + 2 ) ) ) } }} )()" ) ) };
+                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" ).Select(type => $"!( value instanceof {type} )"));
+                string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
-{commonPostfix}";
+                bool hasNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Contains("IfcNullStyle");
+
+                string nullStyle = "";
+
+                if ( hasNullStyle )
+                {
+                    instanceCheck += " && value !== IfcNullStyle.NULL";
+                    nullStyle = " ?? IfcNullStyleDeserializeStep( buffer, cursor, endCursor )";
+                }
+        
+                var selectPostFix = data.IsOptional && useVtable ?
+$@"            if ( {instanceCheck} )
+            {{
+                if ( stepExtractOptional( buffer, cursor, endCursor ) !== null )
+                {{
+                    throw new Error( 'Value in STEP was incorrectly typed for field' );
+                }}
+
+                return null;                
+            }}
+            else
+            {{
+                return value{cast};
+            }}" : (!usePrevCursor ?
+$@"            if ( {instanceCheck} )
+            {{                
+                throw new Error( 'Value in STEP was incorrectly typed for field' );
+            }}
+
+            return value{cast};" :
+$@"            if ( {instanceCheck} )
+            {{                
+                return (void 0);
+            }}
+
+            return value{cast};");
+
+                return @$"{commonPrefix}
+            let expressID = stepExtractReference( buffer, cursor, endCursor );
+            let value : StepEntityBase< EntityTypesIfc >{(hasNullStyle ? " | IfcNullStyle" : "")} | undefined = expressID !== void 0 ? this.model.getElementByExpressID( expressID ) : (this.model.getInlineElementByAddress( stepExtractInlineElemement( buffer, cursor, endCursor )){nullStyle});           
+
+{selectPostFix}";
             }
             else if (typeData is EnumData collection)
             {
@@ -171,21 +240,51 @@ $@"            if ( !( value instanceof {type} ) )
             return "";
         }
 
-        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typeData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric)
+        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric)
         {
-            if (data.IsDerived || data.IsInverse)
+            if (/*(data.IsDerived && !data.HidesParentAttributeOfSameName) ||*/ data.IsInverse)
             {
                 return "";
             }
 
-            var propertyTypeString = $"{ data.Type }{ (data.IsOptional ? " | null" : string.Empty)}";
+            string propertyTypeString;
+
+            if (typesData.TryGetValue(type, out var typeData) && typeData is WrapperType wrapper)
+            {
+                while (typesData.TryGetValue(wrapper.WrappedType, out var innerTypeData) && innerTypeData is WrapperType innerWrapper)
+                {
+                    wrapper = innerWrapper;
+                }
+
+                propertyTypeString = $"{string.Join("", Enumerable.Repeat("Array< ", Math.Max(rank, wrapper.Rank)))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(rank, wrapper.Rank)))}{ (data.IsOptional ? " | null" : string.Empty)}";
+            }
+            else
+            {
+                propertyTypeString = $"{ data.Type }{ (data.IsOptional ? " | null" : string.Empty)}";
+            }
+
+            if (data.IsDerived)
+            {
+                string transformedExpression = BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression);
+
+                if (  string.IsNullOrEmpty( transformedExpression ) )
+                {
+                    return "";
+                }
+
+                return $@"
+    public get {data.Name}() : {propertyTypeString}
+    {{
+        return {BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression)}
+    }}";
+            }
 
             return $@"
     public get {data.Name}() : {propertyTypeString}
     {{
         if ( this.{data.Name}_ === void 0 )
         {{
-            this.{data.Name}_ = (() => {{ {Deserialization(data, vtableOffsset, typeData, selectTypes, data.IsCollection, rank, type, isGeneric )} }})();
+            this.{data.Name}_ = (() => {{ {Deserialization(data, vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric )} }})();
         }}
 
         return this.{data.Name}_ as {propertyTypeString};

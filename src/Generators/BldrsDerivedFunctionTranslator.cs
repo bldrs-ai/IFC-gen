@@ -1,0 +1,131 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace IFC4.Generators
+{
+    public static class BldrsDerivedFunctionTranslator
+    {
+        private enum DerivedDotTransformState
+        {
+            EATING_WHITESPACE = 0,
+            STARTING_RUN = 1,
+            REACHED_DOT = 2
+        }
+
+        public static string TransformDerivedFunctionToTS( string input )
+        {
+            if ( input.Contains( "QUERY") || input.Contains( "<*" ) || input.Contains( "SELF\\" ) || input.Contains("NSegments" ) || input.Contains( "||" ) )
+            {
+                return "";
+            }
+
+            input = input.Replace("]", " - 1]");
+            input = input.Replace("<>", "!==");
+
+            StringBuilder result = new StringBuilder();
+
+            int index = 0;
+
+            DerivedDotTransformState state = DerivedDotTransformState.EATING_WHITESPACE;
+
+            int runStart = 0;
+
+            while (index < input.Length)
+            {
+                char c = input[index];
+
+                switch (state)
+                {
+                case DerivedDotTransformState.EATING_WHITESPACE:
+
+                    if (c != ' ' && c != '\t' && c != '\n' && c != '\r')
+                    {
+                        runStart = index;
+                        state = DerivedDotTransformState.STARTING_RUN;
+                    }
+                    else
+                    {
+                        ++index;
+                    }
+                    break;
+
+                case DerivedDotTransformState.STARTING_RUN:
+
+                    if (c == '.')
+                    {
+                        string run = input.Substring(runStart, index - runStart);
+
+                        if (run.Trim() == "SELF")
+                        {
+                            run = "this?";
+                        }
+                        else if (run.Trim().Length > 0 && char.IsLetter(run.Trim()[0]))
+                        {
+                            run = "this?." + run;
+                        }
+
+                        result.Append(run);
+                        result.Append('.');
+
+                        ++index;
+
+                        state = DerivedDotTransformState.REACHED_DOT;
+                    }
+                    else if (c == ',' || c == ')' || c == ';')
+                    {
+                        string run = input.Substring(runStart, index - runStart);
+
+                        if (run.TrimEnd() == "SELF")
+                        {
+                            run = "this";
+                        }
+                        else if ( run.Trim().Length > 0 && char.IsLetter( run.Trim()[ 0 ] ) )
+                        {
+                            run = "this?." + run.TrimEnd();
+                        }
+
+                        result.Append(run);
+                        result.Append(c);
+
+                        ++index;
+
+                        state = DerivedDotTransformState.EATING_WHITESPACE;
+                    }
+                    else if (c == '(')
+                    {
+                        string run = input.Substring(runStart, index - runStart);
+
+                        result.Append(run);
+                        result.Append(c);
+
+                        ++index;
+
+                        state = DerivedDotTransformState.EATING_WHITESPACE;
+                    }
+                    else
+                    {
+                        ++index;
+                    }
+                    break;
+
+                case DerivedDotTransformState.REACHED_DOT:
+
+                    if (c == ',' || c == ')' || c == '(' || c == ';')
+                    {
+                        state = DerivedDotTransformState.EATING_WHITESPACE;
+                    }
+
+                    result.Append(c);
+                    ++index;
+
+                    break;
+                }
+            }
+
+            return result.ToString();
+        }
+    }
+}
