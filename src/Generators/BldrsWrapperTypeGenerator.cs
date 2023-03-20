@@ -37,32 +37,13 @@ export class {data.Name} extends StepEntityBase< EntityTypesIfc >
 
     {BldrsAttributeGenerator.AttributeDataString(valueAttribute, typesData)};
 {BldrsAttributeGenerator.AttributePropertyString( valueAttribute, 0, typesData, selectData, data.Rank, data.WrappedType, false )}
+
     constructor(localID: number, internalReference: StepEntityInternalReference< EntityTypesIfc >, model: StepModelBase< EntityTypesIfc, StepEntityBase< EntityTypesIfc > > )
     {{
         super( localID, internalReference, model );
     }}
 }}
-";
-            //export class {data.name}specification implements componentspecification
-            //{{
-            //    public readonly name: string = '{data.name}';
-
-            //    public readonly required: readonlyarray< string > = [ {string.join(", ", data.parentsandself().select((supervalue) => $"'{supervalue.name}'"))} ];
-
-            //    public readonly isabstract: boolean = {(data.isabstract ? "true" : "false")};
-
-            //    public readonly attributes: readonlyarray< attributespecification > = 
-            //    [{string.join(", ", data.attributes.where(attr => !attr.isinverse && !attr.isderived).select(attr => $"\n\t\t{{\n\t\t\tname: '{attr.name}',\n\t\t\tiscollection: {(attr.iscollection ? "true" : "false")},\n\t\t\trank: {attr.rank},\n\t\t\tbasetype: '{attr.type}',\n\t\t\toptional: {(attr.isoptional ? "true" : "false")}\n\t\t}}"))}
-            //    ];
-
-            //    public readonly schema: ifcschema = 'ifc';
-
-            //    public static readonly instance: {data.name}specification = new {data.name}specification();
-            //}}
-            //";
-            //            return result;
-
-            return result;
+";            return result;
 
         }
 
