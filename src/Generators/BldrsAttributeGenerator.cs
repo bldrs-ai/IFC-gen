@@ -15,12 +15,16 @@ namespace IFC4.Generators
             
             if ( typesData.TryGetValue( type, out var typeData ) && typeData is WrapperType wrapper)
             {
+                bool logical = wrapper.Name == "IfcLogical";
+
                 while (typesData.TryGetValue(wrapper.WrappedType, out var innerTypeData) && innerTypeData is WrapperType innerWrapper)
                 {
                     wrapper = innerWrapper;
+
+                    logical |= wrapper.Name == "IfcLogical";
                 }
 
-                return $"private {data.Name}_? : {string.Join("", Enumerable.Repeat("Array< ", Math.Max( data.Rank, wrapper.Rank )))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(data.Rank, wrapper.Rank)))}{(data.IsOptional ? " | null" : "")}";
+                return $"private {data.Name}_? : {string.Join("", Enumerable.Repeat("Array< ", Math.Max( data.Rank, wrapper.Rank )))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(data.Rank, wrapper.Rank)))}{(data.IsOptional | logical ? " | null" : "")}";
             }
             else
             {
@@ -28,7 +32,7 @@ namespace IFC4.Generators
             }
         }
 
-        public static string Deserialization( AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, bool isCollection, int rank, string type, bool isGeneric, bool useVtable = true, int indent = 0, bool usePrevCursor = false )
+        public static string Deserialization( AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, bool isCollection, int rank, string type, bool isGeneric, bool useVtable = true, int indent = 0, bool usePrevCursor = false, bool logical = false )
         {
             var commonPrefix = useVtable ? @$"this.guaranteeVTable();
 
@@ -63,12 +67,21 @@ $@"            if ( value === void 0 )
 $@"            if ( value === void 0 )
             {{                
                 throw new Error( 'Value in STEP was incorrectly typed' );
-            }};
+            }}
 
             return value;" : "return value;" );
 
             if (isCollection)
             {
+                string arrayPostfix = "return value;";
+                string nullPrefix = data.IsOptional && useVtable ?
+$@"            
+            if ( stepExtractOptional( buffer, cursor, endCursor ) === null )
+            {{
+                return null;
+            }}
+" : "";
+
                 string valueType;
 
                 if (selectTypes.ContainsKey(type))
@@ -96,7 +109,7 @@ $@"            if ( value === void 0 )
 
                 }
 
-                    return @$"{commonPrefix}
+                    return @$"{commonPrefix}{nullPrefix}
             let value : {valueType} = [];
 
             for ( let address of stepExtractArray( buffer, cursor, endCursor ) )
@@ -106,7 +119,7 @@ $@"            if ( value === void 0 )
                 }})() );
             }}
 
-{commonPostfix}";
+{arrayPostfix}";
             }
 
             // Item is used in functions.
@@ -119,7 +132,10 @@ $@"            if ( value === void 0 )
             {
                 return type switch
                 {
-                    "boolean" => @$"{commonPrefix}
+                    "boolean" => logical ? @$"{commonPrefix}
+            let value = stepExtractLogical( buffer, cursor, endCursor );
+
+{commonPostfix}" : @$"{commonPrefix}
             let value = stepExtractBoolean( buffer, cursor, endCursor );
 
 {commonPostfix}",
@@ -144,7 +160,7 @@ $@"            if ( value === void 0 )
 
             if (typeData is WrapperType wrapper)
             {
-                return Deserialization(data, vtableOffsset, typesData, selectTypes, wrapper.IsCollectionType, wrapper.Rank, wrapper.WrappedType, isGeneric, useVtable, indent, usePrevCursor);
+                return Deserialization(data, vtableOffsset, typesData, selectTypes, wrapper.IsCollectionType, wrapper.Rank, wrapper.WrappedType, isGeneric, useVtable, indent, usePrevCursor, wrapper.Name == "IfcLogical");
             }
             else if (typeData is Entity)
             {
@@ -251,12 +267,16 @@ $@"            if ( {instanceCheck} )
 
             if (typesData.TryGetValue(type, out var typeData) && typeData is WrapperType wrapper)
             {
+                bool logical = wrapper.Name == "IfcLogical";
+
                 while (typesData.TryGetValue(wrapper.WrappedType, out var innerTypeData) && innerTypeData is WrapperType innerWrapper)
                 {
                     wrapper = innerWrapper;
+
+                    logical |= wrapper.Name == "IfcLogical";
                 }
 
-                propertyTypeString = $"{string.Join("", Enumerable.Repeat("Array< ", Math.Max(rank, wrapper.Rank)))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(rank, wrapper.Rank)))}{ (data.IsOptional ? " | null" : string.Empty)}";
+                propertyTypeString = $"{string.Join("", Enumerable.Repeat("Array< ", Math.Max(rank, wrapper.Rank)))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(rank, wrapper.Rank)))}{ (data.IsOptional | logical ? " | null" : string.Empty)}";
             }
             else
             {

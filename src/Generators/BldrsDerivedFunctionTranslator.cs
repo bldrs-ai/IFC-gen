@@ -22,6 +22,7 @@ namespace IFC4.Generators
                 return "";
             }
 
+            input = input.Replace("[", ".[");
             input = input.Replace("]", " - 1]");
             input = input.Replace("<>", "!==");
 
@@ -60,7 +61,7 @@ namespace IFC4.Generators
 
                         if (run.Trim() == "SELF")
                         {
-                            run = "this?";
+                            run = "this";
                         }
                         else if (run.Trim().Length > 0 && char.IsLetter(run.Trim()[0]))
                         {
@@ -68,7 +69,15 @@ namespace IFC4.Generators
                         }
 
                         result.Append(run);
-                        result.Append('.');
+
+                        if ( !Double.TryParse( run, out double _ ) )
+                        {
+                            result.Append("?.");
+                        }
+                        else
+                        {
+                             result.Append(".");
+                        }
 
                         ++index;
 
