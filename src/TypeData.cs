@@ -140,8 +140,6 @@ namespace Express
                 string afterAssignment = fullRule.Split(":=").Last();
 
                 DerivedExpression = afterAssignment;
-
-                Console.WriteLine(afterAssignment);
             }
 
             // A derived attribute which replaces a base class's version of
