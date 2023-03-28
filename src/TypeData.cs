@@ -147,11 +147,8 @@ namespace Express
             // parent class' attribute of the form SELF\IfcNamedUnit.Dimensions.
             if (isDerived && name.Contains("SELF\\"))
             {
-
-
                 HidesParentAttributeOfSameName = true;
                 Name = Name.Split('.').Last();
-
             }
         }
 

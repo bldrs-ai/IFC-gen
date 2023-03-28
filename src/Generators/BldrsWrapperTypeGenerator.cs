@@ -12,7 +12,7 @@ namespace IFC4.Generators
         public static string Generate( BldrsGenerator generator, WrapperType data, Dictionary< string, TypeData > typesData, Dictionary<string, SelectType> selectData)
         {
             var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
-            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {{ {data.WrappedType} }} from \"./{data.WrappedType}.bldrs\"";
+            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {{ {data.WrappedType} }} from \"./index\"";
 
             AttributeData valueAttribute = new AttributeData(generator, "Value", data.WrappedType, data.Rank, data.IsCollectionType, false, false, false, false);
 
