@@ -133,13 +133,16 @@ export {modifiers} class {data.Name} extends {superClass}
     {{
         return EntityTypesIfc.{data.Name.ToUpperInvariant()};
     }}
-
 {String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"    {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)};" ))}
 {propertyBuilder.ToString()}
     constructor(localID: number, internalReference: StepEntityInternalReference< EntityTypesIfc >, model: StepModelBase< EntityTypesIfc, StepEntityBase< EntityTypesIfc > > )
     {{
         super( localID, internalReference, model );
     }}
+
+    public static readonly query = [ { string.Join( ", ", data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Select( childEntity => $"EntityTypesIfc.{childEntity.Name.ToUpperInvariant()}" ) ) } ];
+
+    public static readonly expectedType: EntityTypesIfc = EntityTypesIfc.{data.Name.ToUpperInvariant()};
 }}
 ";
 

@@ -81,7 +81,7 @@ namespace IFC4.Generators
 
             for (int where = 0; where < Names.Length; ++where)
             {
-                if (!IsAbstract[where])
+            //    if (!IsAbstract[where])
                 {
                     string localName = Names[where];
 
@@ -106,10 +106,22 @@ namespace IFC4.Generators
             }
 
             output.AppendLine($"{indent0}];");
+
+            output.AppendLine($"{indent0}let queries : {entityTypesName}[][]  = [");
+
+            for (int where = 0; where < Names.Length; ++where)
+            {
+                string localName = Names[where];
+
+                output.AppendLine($"{indent1}{localName}.query,");
+            }
+
+            output.AppendLine($"{indent0}];");
+
             output.AppendLine();
             output.AppendLine($"let parser = new StepParser< {entityTypesName} >( {entitySearchTypesName} );");
             output.AppendLine();
-            output.AppendLine($"let {name} = new StepEntitySchema< {entityTypesName} >( constructors, parser );");
+            output.AppendLine($"let {name} = new StepEntitySchema< {entityTypesName} >( constructors, parser, queries );");
             output.AppendLine();
             output.AppendLine($"export default {name};");
         }
@@ -140,13 +152,18 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent0}}}");
 
+            output.AppendLine($"const {name}Count = {Names.Length};");
+            output.AppendLine();
+
             if ( isDefault )
             {
                 output.AppendLine($"export default {name};");
+
+                output.AppendLine($"export {{ {name}Count }};");
             }
             else
             {
-                output.AppendLine($"export {{ {name} }};");
+                output.AppendLine($"export {{ {name}, {name}Count }};");
             }
         }
 
