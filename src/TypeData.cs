@@ -328,6 +328,36 @@ namespace Express
             return parents;
         }
 
+        internal IEnumerable<Entity> Children()
+        {
+            var parents = new List<Entity>();
+
+            parents.AddRange(Supers);
+
+            foreach (var s in Supers)
+            {
+                parents.AddRange(s.Children());
+            }
+
+            return parents;
+        }
+
+        internal IEnumerable<Entity> ChildrenAndSelf()
+        {
+            var parents = new List<Entity>();
+
+            parents.Add(this);
+
+            parents.AddRange(Supers);
+
+            foreach (var s in Supers)
+            {
+                parents.AddRange(s.Children());
+            }
+
+            return parents.Distinct();
+        }
+
         /// <summary>
         /// Determine whether this is the provided type or a sub-type of the provided type.
         /// </summary>

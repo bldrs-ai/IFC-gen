@@ -42,6 +42,10 @@ export class {data.Name} extends StepEntityBase< EntityTypesIfc >
     {{
         super( localID, internalReference, model );
     }}
+
+    public static readonly query = [ EntityTypesIfc.{data.Name.ToUpperInvariant()} ];
+
+    public static readonly expectedType: EntityTypesIfc = EntityTypesIfc.{data.Name.ToUpperInvariant()};
 }}
 ";            return result;
 
