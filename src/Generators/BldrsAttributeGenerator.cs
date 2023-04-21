@@ -34,52 +34,45 @@ namespace IFC4.Generators
 
         public static string Deserialization( AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, bool isCollection, int rank, string type, bool isGeneric, bool useVtable = true, int indent = 0, bool usePrevCursor = false, bool logical = false )
         {
-            var commonPrefix = useVtable ? @$"this.guaranteeVTable();
+            var commonPrefix = useVtable ? @$"this.guaranteeVTable()
 
-            let internalReference = this.internalReference_ as Required< StepEntityInternalReference< EntityTypesIfc > >;
+      let internalReference = this.internalReference_ as Required< StepEntityInternalReference< EntityTypesIfc > >
 
-            if ( {vtableOffsset} >= internalReference.vtableCount )
-            {{
-                throw new Error( ""Couldn't read field due to too few fields in record"" ); 
-            }}
+      if ( {vtableOffsset} >= internalReference.vtableCount ) {{
+        throw new Error( ""Couldn't read field due to too few fields in record"" )
+      }}
             
-            let vtableSlot = internalReference.vtableIndex + {vtableOffsset};
+      let vtableSlot = internalReference.vtableIndex + {vtableOffsset}
 
-            let cursor    = internalReference.vtable[ vtableSlot ];
-            let buffer    = internalReference.buffer;
-            let endCursor = buffer.length;
-" : (usePrevCursor ? "" : $@"let cursor = address;
+      let cursor    = internalReference.vtable[ vtableSlot ]
+      let buffer    = internalReference.buffer
+      let endCursor = buffer.length
+" : (usePrevCursor ? "" : $@"let cursor = address
 ");
             var commonPostfix = data.IsOptional && useVtable ? 
-$@"            if ( value === void 0 )
-            {{
-                if ( stepExtractOptional( buffer, cursor, endCursor ) !== null )
-                {{
-                    throw new Error( 'Value in STEP was incorrectly typed' );
-                }}
+$@"      if ( value === void 0 ) {{
+        if ( stepExtractOptional( buffer, cursor, endCursor ) !== null ) {{
+          throw new Error( 'Value in STEP was incorrectly typed' )
+        }}
 
-                return null;                
-            }}
-            else
-            {{
-                return value;
-            }}": (!usePrevCursor ?
-$@"            if ( value === void 0 )
-            {{                
-                throw new Error( 'Value in STEP was incorrectly typed' );
-            }}
+        return null
+      }} else {{
+        return value
+      }}": (!usePrevCursor ?
+$@"      if ( value === void 0 )  {{
+        throw new Error( 'Value in STEP was incorrectly typed' )
+      }}
 
-            return value;" : "return value;" );
+      return value" : "return value" );
 
             if (isCollection)
             {
-                string arrayPostfix = "return value;";
+                string arrayPostfix = "return value";
                 string nullPrefix = data.IsOptional && useVtable ?
-$@"            
-            if ( stepExtractOptional( buffer, cursor, endCursor ) === null )
-            {{
-                return null;
-            }}
+$@"
+      if ( stepExtractOptional( buffer, cursor, endCursor ) === null ) {{
+        return null
+      }}
 " : "";
 
                 string valueType;
@@ -110,14 +103,13 @@ $@"
                 }
 
                     return @$"{commonPrefix}{nullPrefix}
-            let value : {valueType} = [];
+      let value : {valueType} = [];
 
-            for ( let address of stepExtractArray( buffer, cursor, endCursor ) )
-            {{
-                value.push( (() => {{ 
-                    {Deserialization( data, vtableOffsset, typesData, selectTypes, rank > 1, rank - 1, type, isGeneric, false, indent + 2).ReplaceLineEndings(Environment.NewLine +  String.Join( "", Enumerable.Repeat( "    ", indent + 2 ) ) ) }
-                }})() );
-            }}
+      for ( let address of stepExtractArray( buffer, cursor, endCursor ) ) {{
+        value.push( (() => {{ 
+          {Deserialization( data, vtableOffsset, typesData, selectTypes, rank > 1, rank - 1, type, isGeneric, false, indent + 2).ReplaceLineEndings(Environment.NewLine +  String.Join( "", Enumerable.Repeat( "  ", indent + 2 ) ) ) }
+        }})() )
+      }}
 
 {arrayPostfix}";
             }
@@ -133,23 +125,23 @@ $@"
                 return type switch
                 {
                     "boolean" => logical ? @$"{commonPrefix}
-            let value = stepExtractLogical( buffer, cursor, endCursor );
+     let value = stepExtractLogical( buffer, cursor, endCursor )
 
 {commonPostfix}" : @$"{commonPrefix}
-            let value = stepExtractBoolean( buffer, cursor, endCursor );
+     let value = stepExtractBoolean( buffer, cursor, endCursor )
 
 {commonPostfix}",
                     "number" => @$"{commonPrefix}
-            let value = stepExtractNumber( buffer, cursor, endCursor );
+     let value = stepExtractNumber( buffer, cursor, endCursor )
 
 {commonPostfix}",
                     "string" => @$"{commonPrefix}
-            let value = stepExtractString( buffer, cursor, endCursor );
+     let value = stepExtractString( buffer, cursor, endCursor )
 
 {commonPostfix}",
 
                     "[Uint8Array, number]" => @$"{commonPrefix}
-            let value = stepExtractBinary( buffer, cursor, endCursor );
+     let value = stepExtractBinary( buffer, cursor, endCursor )
 
 {commonPostfix}",
                     _ => throw new Exception("Unknown type requested deserializer string")
@@ -165,25 +157,20 @@ $@"
             else if (typeData is Entity)
             {
                 var entityPostFix = data.IsOptional && useVtable ?
-$@"            if ( !( value instanceof {type} ) )
-            {{
-                if ( stepExtractOptional( buffer, cursor, endCursor ) !== null )
-                {{
-                    throw new Error( 'Value in STEP was incorrectly typed for field' );
-                }}
+$@"     if ( !( value instanceof {type} ) ) {{
+        if ( stepExtractOptional( buffer, cursor, endCursor ) !== null ) {{
+          throw new Error( 'Value in STEP was incorrectly typed for field' )
+        }}
 
-                return null;                
-            }}
-            else
-            {{
-                return value;
-            }}" : ( !usePrevCursor ?
-$@"            if ( !( value instanceof {type} ) )
-            {{                
-                throw new Error( 'Value in STEP was incorrectly typed for field' );
-            }};
+        return null
+      }} else {{
+        return value
+      }}" : ( !usePrevCursor ?
+$@"      if ( !( value instanceof {type} ) )  {{
+        throw new Error( 'Value in STEP was incorrectly typed for field' )
+      }}
 
-            return value;" :
+      return value" :
 $@"            if ( !( value instanceof {type} ) )
             {{                
                 return (void 0);
@@ -192,8 +179,10 @@ $@"            if ( !( value instanceof {type} ) )
             return value;");
 
                 return @$"{commonPrefix}
-            let expressID = stepExtractReference( buffer, cursor, endCursor );
-            let value = expressID !== void 0 ? this.model.getElementByExpressID( expressID ) : this.model.getInlineElementByAddress( stepExtractInlineElemement( buffer, cursor, endCursor ) );           
+       let expressID = stepExtractReference( buffer, cursor, endCursor );
+       let value =
+         expressID !== void 0 ? this.model.getElementByExpressID( expressID ) :
+         this.model.getInlineElementByAddress( stepExtractInlineElemement( buffer, cursor, endCursor ) )
 
 {entityPostFix}";
             }
@@ -213,42 +202,38 @@ $@"            if ( !( value instanceof {type} ) )
                 }
         
                 var selectPostFix = data.IsOptional && useVtable ?
-$@"            if ( {instanceCheck} )
-            {{
-                if ( stepExtractOptional( buffer, cursor, endCursor ) !== null )
-                {{
-                    throw new Error( 'Value in STEP was incorrectly typed for field' );
-                }}
+$@"      if ( {instanceCheck} ) {{
+        if ( stepExtractOptional( buffer, cursor, endCursor ) !== null ) {{
+          throw new Error( 'Value in STEP was incorrectly typed for field' )
+        }}
 
-                return null;                
-            }}
-            else
-            {{
-                return value{cast};
-            }}" : (!usePrevCursor ?
-$@"            if ( {instanceCheck} )
-            {{                
-                throw new Error( 'Value in STEP was incorrectly typed for field' );
-            }}
+        return null
+      }} else {{
+        return value{cast};
+      }}" : (!usePrevCursor ?
+$@"      if ( {instanceCheck} ) {{
+        throw new Error( 'Value in STEP was incorrectly typed for field' )
+      }}
 
-            return value{cast};" :
-$@"            if ( {instanceCheck} )
-            {{                
-                return (void 0);
-            }}
+      return value{cast}" :
+$@"      if ( {instanceCheck} ) {{
+        return (void 0)
+      }}
 
-            return value{cast};");
+      return value{cast}");
 
                 return @$"{commonPrefix}
-            let expressID = stepExtractReference( buffer, cursor, endCursor );
-            let value : StepEntityBase< EntityTypesIfc >{(hasNullStyle ? " | IfcNullStyle" : "")} | undefined = expressID !== void 0 ? this.model.getElementByExpressID( expressID ) : (this.model.getInlineElementByAddress( stepExtractInlineElemement( buffer, cursor, endCursor )){nullStyle});           
+      let expressID = stepExtractReference( buffer, cursor, endCursor );
+      let value : StepEntityBase< EntityTypesIfc >{(hasNullStyle ? " | IfcNullStyle" : "")} | undefined =
+        expressID !== void 0 ? this.model.getElementByExpressID( expressID ) :
+        (this.model.getInlineElementByAddress( stepExtractInlineElemement( buffer, cursor, endCursor )){nullStyle})
 
 {selectPostFix}";
             }
             else if (typeData is EnumData collection)
             {
                 return @$"{commonPrefix}
-            let value = {typeData.Name}DeserializeStep( buffer, cursor, endCursor );
+      let value = {typeData.Name}DeserializeStep( buffer, cursor, endCursor )
 
 {commonPostfix}";
             }
@@ -293,22 +278,20 @@ $@"            if ( {instanceCheck} )
                 }
 
                 return $@"
-    public get {data.Name}() : {propertyTypeString}
-    {{
-        return {BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression)}
-    }}";
+  public get {data.Name}() : {propertyTypeString} {{
+    return {BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression)}
+  }}";
             }
 
             return $@"
-    public get {data.Name}() : {propertyTypeString}
-    {{
-        if ( this.{data.Name}_ === void 0 )
-        {{
-            this.{data.Name}_ = (() => {{ {Deserialization(data, vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric )} }})();
-        }}
+  public get {data.Name}() : {propertyTypeString} {{
+    if ( this.{data.Name}_ === void 0 ) {{
+      this.{data.Name}_ = (() => {{ 
+        {Deserialization(data, vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric )} }})()
+    }}
 
-        return this.{data.Name}_ as {propertyTypeString};
-    }}";
+    return this.{data.Name}_ as {propertyTypeString}
+  }}";
         }
     }
 }

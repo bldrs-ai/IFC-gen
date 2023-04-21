@@ -47,7 +47,7 @@ namespace IFC4.Generators
 
             foreach ( string name in typesData.Where(nameType => { return nameType.Value is EnumData && !(nameType.Value is SelectType); }).OrderBy(nameType => nameType.Key).Select( nameType => nameType.Key ) )
             { 
-                output.AppendLine($"export {{ {name}, {name}DeserializeStep }} from './{name}.bldrs';");
+                output.AppendLine($"export {{ {name}, {name}DeserializeStep }} from './{name}.bldrs'");
             }
 
             foreach ( string name in Names.OrderBy( name =>
@@ -63,21 +63,22 @@ namespace IFC4.Generators
 
                 }))
             {
-                output.AppendLine($"export {{ {name} }} from './{name}.bldrs';");
+                output.AppendLine($"export {{ {name} }} from './{name}.bldrs'");
             }
         }
 
         public void GenerateSchema(StringBuilder output, string name, int indent, string entityTypesName, string entityTypesFile, string entitySearchTypesName, string entitySearchTypesFile )
         {
-            string indent0 = new string(' ', indent * 4);
-            string indent1 = new string(' ', (indent + 1) * 4);
+            string indent0 = new string(' ', indent * 2);
+            string indent1 = new string(' ', (indent + 1) * 2);
 
-            output.AppendLine($"{indent0}import {entityTypesName} from './{entityTypesFile}';");
-            output.AppendLine($"{indent0}import {entitySearchTypesName} from './{entitySearchTypesFile}';");
-            output.AppendLine($"{indent0}import StepEntityConstructor from '../../core/step_entity_constructor';");
-            output.AppendLine($"{indent0}import StepEntityBase from '../../core/step_entity_base';");
-            output.AppendLine($"{indent0}import StepEntitySchema from '../../core/step_entity_schema';");
-            output.AppendLine($"{indent0}import StepParser from '../../../dependencies/conway-ds/src/parsing/step/step_parser';");
+            output.AppendLine($"/* This is generated code, don't alter */");
+            output.AppendLine($"{indent0}import {entityTypesName} from './{entityTypesFile}'");
+            output.AppendLine($"{indent0}import {entitySearchTypesName} from './{entitySearchTypesFile}'");
+            output.AppendLine($"{indent0}import StepEntityConstructor from '../../core/step_entity_constructor'");
+            output.AppendLine($"{indent0}import StepEntityBase from '../../core/step_entity_base'");
+            output.AppendLine($"{indent0}import StepEntitySchema from '../../core/step_entity_schema'");
+            output.AppendLine($"{indent0}import StepParser from '../../../dependencies/conway-ds/src/parsing/step/step_parser'");
 
             for (int where = 0; where < Names.Length; ++where)
             {
@@ -85,7 +86,7 @@ namespace IFC4.Generators
                 {
                     string localName = Names[where];
 
-                    output.AppendLine($"{indent0}import {{ {localName} }} from './index';");
+                    output.AppendLine($"{indent0}import {{ {localName} }} from './index'");
                 }
             }
 
@@ -105,9 +106,9 @@ namespace IFC4.Generators
                 }
             }
 
-            output.AppendLine($"{indent0}];");
+            output.AppendLine($"{indent0}]");
 
-            output.AppendLine($"{indent0}let queries : {entityTypesName}[][]  = [");
+            output.AppendLine($"{indent0}let queries : {entityTypesName}[][] = [");
 
             for (int where = 0; where < Names.Length; ++where)
             {
@@ -116,21 +117,22 @@ namespace IFC4.Generators
                 output.AppendLine($"{indent1}{localName}.query,");
             }
 
-            output.AppendLine($"{indent0}];");
+            output.AppendLine($"{indent0}]");
 
             output.AppendLine();
-            output.AppendLine($"let parser = new StepParser< {entityTypesName} >( {entitySearchTypesName} );");
+            output.AppendLine($"let parser =\n  new StepParser< {entityTypesName} >( {entitySearchTypesName} )");
             output.AppendLine();
-            output.AppendLine($"let {name} = new StepEntitySchema< {entityTypesName} >( constructors, parser, queries );");
+            output.AppendLine($"let {name} =\n  new StepEntitySchema< {entityTypesName} >( constructors, parser, queries )");
             output.AppendLine();
-            output.AppendLine($"export default {name};");
+            output.AppendLine($"export default {name}");
         }
 
         public void GenerateEnum(StringBuilder output, string name, int indent, bool isDefault )
         {
-            string indent0 = new string(' ', indent * 4);
-            string indent1 = new string(' ', (indent + 1) * 4);
+            string indent0 = new string(' ', indent * 2);
+            string indent1 = new string(' ', (indent + 1) * 2);
 
+            output.AppendLine($"/* This is generated code, don't alter */");
             output.AppendLine($"{indent0}enum {name} {{");
 
             for (int where = 0; where < Names.Length; ++where)
@@ -151,19 +153,20 @@ namespace IFC4.Generators
             }
 
             output.AppendLine($"{indent0}}}");
+            output.AppendLine();
 
-            output.AppendLine($"const {name}Count = {Names.Length};");
+            output.AppendLine($"const {name}Count = {Names.Length}");
             output.AppendLine();
 
             if ( isDefault )
             {
-                output.AppendLine($"export default {name};");
+                output.AppendLine($"export default {name}");
 
-                output.AppendLine($"export {{ {name}Count }};");
+                output.AppendLine($"export {{ {name}Count }}");
             }
             else
             {
-                output.AppendLine($"export {{ {name}, {name}Count }};");
+                output.AppendLine($"export {{ {name}, {name}Count }}");
             }
         }
 
@@ -173,16 +176,17 @@ namespace IFC4.Generators
             string indent0 = new string(' ', indent * 4);
             string indent1 = new string(' ', (indent + 1) * 4);
 
-            output.AppendLine("import MinimalPerfectHash from '../../../dependencies/conway-ds/src/indexing/minimal_perfect_hash';");
+            output.AppendLine("/* This is generated code, don't alter */");
+            output.AppendLine("import MinimalPerfectHash from '../../../dependencies/conway-ds/src/indexing/minimal_perfect_hash'");
 
             if (!String.IsNullOrEmpty(enumFile))
             {
-                output.AppendLine($"import {name} from './{enumFile}';");
+                output.AppendLine($"import {name} from './{enumFile}'");
             }
             
             output.AppendLine();
 
-            output.Append($"{indent0}let gMap{name} = new Int32Array( [");
+            output.Append($"{indent0}let gMap{name} =\n  new Int32Array( [");
 
             for (int where = 0; where < IDTable.GMap.Count; ++where)
             {
@@ -194,10 +198,10 @@ namespace IFC4.Generators
                 output.Append($"{IDTable.GMap[where]}");
             }
 
-            output.AppendLine($"{indent0}] );");
+            output.AppendLine($"{indent0}] )");
             output.AppendLine();
 
-            output.Append($"let prefixSumAddress{name} = new Uint32Array( [");
+            output.Append($"let prefixSumAddress{name} =\n  new Uint32Array( [");
 
             // Prefix sum in hash table order allows us to go straight from hash to string lookup
             for (int where = 0; where < PrefixSumEncoded.Length; ++where)
@@ -210,10 +214,10 @@ namespace IFC4.Generators
                 output.Append($"{PrefixSumEncoded[where]}");
             }
 
-            output.AppendLine($"] );");
+            output.AppendLine($"] )");
             output.AppendLine();
 
-            output.Append($"{indent0}let slotMap{name} = new Int32Array( [");
+            output.Append($"{indent0}let slotMap{name} =\n  new Int32Array( [");
 
             // Slotmap points back to the original IDs
             for (int where = 0; where < IDTable.SlotMap.Count; ++where)
@@ -226,28 +230,28 @@ namespace IFC4.Generators
                 output.Append($"{IDTable.SlotMap[where]}");
             }
 
-            output.AppendLine($"] );");
+            output.AppendLine($"] )");
             output.AppendLine();
-            output.Append($"{indent0}let encodedData{name} = (new TextEncoder()).encode( \"");
+            output.Append($"{indent0}let encodedData{name} =\n  (new TextEncoder()).encode( \"");
 
             foreach ( var encodedKey in IDTable.Keys)
             {
                 output.Append(Encoding.UTF8.GetString(encodedKey));
             }
 
-            output.AppendLine("\" );");
+            output.AppendLine("\" )");
             output.AppendLine();
 
-            output.AppendLine($"{indent0}let {name}Search = new MinimalPerfectHash< {name} >( gMap{name}, prefixSumAddress{name}, slotMap{name}, encodedData{name} );");
+            output.AppendLine($"{indent0}let {name}Search =\n  new MinimalPerfectHash< {name} >( gMap{name}, prefixSumAddress{name}, slotMap{name}, encodedData{name} )");
             output.AppendLine();
 
             if (exportDefault)
             {
-                output.AppendLine($"{indent0}export default {name}Search;");
+                output.AppendLine($"{indent0}export default {name}Search");
             }
             else
             {
-                output.AppendLine($"{indent0}export {{ {name}Search }};");
+                output.AppendLine($"{indent0}export {{ {name}Search }}");
             }
 
         }
