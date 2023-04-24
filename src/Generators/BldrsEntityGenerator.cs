@@ -119,7 +119,7 @@ namespace IFC4.Generators
 $@"
 {importBuilder.ToString()}
 /* This is generated code, don't modify */
-import EntityTypesIfc from ""./entity_types_ifc.bldrs""
+import EntityTypesIfc from ""./entity_types_ifc.gen""
 import StepEntityInternalReference from ""../../core/step_entity_internal_reference""
 import StepEntityBase from ""../../core/step_entity_base""
 import StepModelBase from ""../../core/step_model_base""

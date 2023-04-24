@@ -23,7 +23,7 @@ namespace IFC4.Generators
             SelectData = new Dictionary<string, SelectType>();
         }
 
-        public string FileExtension => "bldrs.ts";
+        public string FileExtension => "gen.ts";
 
         public Dictionary<string, SelectType> SelectData { get; set; }
 

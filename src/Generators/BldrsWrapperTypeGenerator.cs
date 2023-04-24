@@ -20,7 +20,7 @@ namespace IFC4.Generators
 $@"
 /* This is generated code, don't alter */
 {wrappedTypeImport}
-import EntityTypesIfc from ""./entity_types_ifc.bldrs""
+import EntityTypesIfc from ""./entity_types_ifc.gen""
 import StepEntityInternalReference from ""../../core/step_entity_internal_reference""
 import StepEntityBase from ""../../core/step_entity_base""
 import StepModelBase from ""../../core/step_model_base""
