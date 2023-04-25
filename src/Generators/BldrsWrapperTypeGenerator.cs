@@ -16,6 +16,14 @@ namespace IFC4.Generators
 
             AttributeData valueAttribute = new AttributeData(generator, "Value", data.WrappedType, data.Rank, data.IsCollectionType, false, false, false, false);
 
+            var importBuilder = new StringBuilder();
+            var importList = new HashSet<string>();
+
+            string attributePropertyString = BldrsAttributeGenerator.AttributePropertyString(valueAttribute, 0, typesData, selectData, data.Rank, data.WrappedType, false, importList);
+
+            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.StepDeserializationFunctions, importList, "../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions");
+            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.IfcIntrinsicFunctions, importList, "../../core/ifc/ifc_functions");
+
             var result =
 $@"
 /* This is generated code, don't alter */
@@ -45,7 +53,7 @@ export class {data.Name} extends StepEntityBase< EntityTypesIfc > {{
   }}
 
   {BldrsAttributeGenerator.AttributeDataString(valueAttribute, typesData)};
-{BldrsAttributeGenerator.AttributePropertyString( valueAttribute, 0, typesData, selectData, data.Rank, data.WrappedType, false )}
+{attributePropertyString}
 
   constructor(
       localID: number,

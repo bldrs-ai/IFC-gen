@@ -9,6 +9,20 @@ namespace IFC4.Generators
 {
     public static class BldrsAttributeGenerator
     {
+        public static readonly string[] DeserializationFunctions =
+        {
+            "stepExtractBoolean",
+            "stepExtractEnum",
+            "stepExtractString",
+            "stepExtractOptional",
+            "stepExtractBinary",
+            "stepExtractReference",
+            "stepExtractNumber",
+            "stepExtractInlineElemement",
+            "stepExtractArray",
+            "stepExtractLogical"
+        };
+
         public static string AttributeDataString(AttributeData data, Dictionary<string, TypeData> typesData)
         {
             var type = data.InnerType;
@@ -102,7 +116,7 @@ $@"
 
                 }
 
-                    return @$"{commonPrefix}{nullPrefix}
+                return @$"{commonPrefix}{nullPrefix}
       let value : {valueType} = [];
 
       for ( let address of stepExtractArray( buffer, cursor, endCursor ) ) {{
@@ -241,7 +255,7 @@ $@"      if ( {instanceCheck} ) {{
             return "";
         }
 
-        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric)
+        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric, HashSet< string > importFunctions )
         {
             if (/*(data.IsDerived && !data.HidesParentAttributeOfSameName) ||*/ data.IsInverse)
             {
@@ -270,7 +284,7 @@ $@"      if ( {instanceCheck} ) {{
 
             if (data.IsDerived)
             {
-                string transformedExpression = BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression);
+                string transformedExpression = BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression, importFunctions);
 
                 if (  string.IsNullOrEmpty( transformedExpression ) )
                 {
@@ -279,15 +293,25 @@ $@"      if ( {instanceCheck} ) {{
 
                 return $@"
   public get {data.Name}() : {propertyTypeString} {{
-    return {BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression)}
+    return {transformedExpression}
   }}";
+            }
+
+            string deserialization = Deserialization(data, vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric);
+
+            foreach (string deserializationFunction in DeserializationFunctions)
+            {
+                if (deserialization.Contains(deserializationFunction))
+                {
+                    importFunctions.Add(deserializationFunction);
+                }
             }
 
             return $@"
   public get {data.Name}() : {propertyTypeString} {{
     if ( this.{data.Name}_ === void 0 ) {{
       this.{data.Name}_ = (() => {{ 
-        {Deserialization(data, vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric )} }})()
+        {deserialization} }})()
     }}
 
     return this.{data.Name}_ as {propertyTypeString}

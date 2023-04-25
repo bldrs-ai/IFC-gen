@@ -15,11 +15,68 @@ namespace IFC4.Generators
             REACHED_DOT = 2
         }
 
-        public static string TransformDerivedFunctionToTS( string input )
+        public static readonly string[] IntrinsicFunctions =
+        {
+            "NVL",
+            "HIINDEX",
+            "SIZEOF",
+            "IfcBaseAxis",
+            "IfcBooleanChoose",
+            "IfcBuild2Axes",
+            "IfcBuildAxes",
+            "IfcConstraintsParamBSpline",
+            "IfcConvertDirectionInto2D",
+            "IfcCorrectDimensions",
+            "IfcCorrectFillAreaStyle",
+            "IfcCorrectLocalPlacement",
+            "IfcCorrectObjectAssignment",
+            "IfcCorrectUnitAssignment",
+            "IfcCrossProduct",
+            "IfcCurveDim",
+            "IfcDeriveDimensionalExponents",
+            "IfcDimensionsForSiUnit",
+            "IfcDotProduct",
+            "IfcFirstProjAxis",
+            "IfcListToArray",
+            "IfcLoopHeadToTail",
+            "IfcMakeArrayOfArray",
+            "IfcMlsTotalThickness",
+            "IfcNormalise",
+            "IfcOrthogonalComplement",
+            "IfcPathHeadToTail",
+            "IfcSameAxis2Placement",
+            "IfcSameCartesianPoint",
+            "IfcSameDirection",
+            "IfcSameValidPrecision",
+            "IfcSameValue",
+            "IfcScalarTimesVector",
+            "IfcSecondProjAxis",
+            "IfcShapeRepresentationTypes",
+            "IfcTaperedSweptAreaProfiles",
+            "IfcTopologyRepresentationTypes",
+            "IfcUniqueDefinitionNames",
+            "IfcUniquePropertyName",
+            "IfcUniquePropertySetNames",
+            "IfcUniqueQuantityNames",
+            "IfcVectorDifference",
+            "IfcVectorSum",
+            "IfcPointListDim",
+            "IfcGetBasisSurface"
+        };
+
+        public static string TransformDerivedFunctionToTS( string input, HashSet< string > importFunctions )
         {
             if ( input.Contains( "QUERY") || input.Contains( "<*" ) || input.Contains( "SELF\\" ) || input.Contains("NSegments" ) || input.Contains( "||" ) )
             {
                 return "";
+            }
+
+            foreach ( string intrinsicFunction in IntrinsicFunctions )
+            {
+                if ( input.Contains( intrinsicFunction) )
+                {
+                    importFunctions.Add(intrinsicFunction);
+                }
             }
 
             input = input.Replace("[", ".[");
