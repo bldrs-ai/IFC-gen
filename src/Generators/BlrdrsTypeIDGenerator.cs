@@ -40,14 +40,9 @@ namespace IFC4.Generators
 
         public void GenerateInternal(StringBuilder output, Dictionary<string, TypeData> typesData )
         {
-            //foreach (string name in typesData.Where(nameType => { return nameType.Value is WrapperType; }).OrderBy(nameType => nameType.Key).Select(nameType => nameType.Key))
-            //{
-            //    output.AppendLine($"export {{ {name} }} from './{name}.bldrs';");
-            //}
-
             foreach ( string name in typesData.Where(nameType => { return nameType.Value is EnumData && !(nameType.Value is SelectType); }).OrderBy(nameType => nameType.Key).Select( nameType => nameType.Key ) )
             { 
-                output.AppendLine($"export {{ {name}, {name}DeserializeStep }} from './{name}.bldrs'");
+                output.AppendLine($"export {{ {name}, {name}DeserializeStep }} from './{name}.gen'");
             }
 
             foreach ( string name in Names.OrderBy( name =>
@@ -63,7 +58,7 @@ namespace IFC4.Generators
 
                 }))
             {
-                output.AppendLine($"export {{ {name} }} from './{name}.bldrs'");
+                output.AppendLine($"export {{ {name} }} from './{name}.gen'");
             }
         }
 
