@@ -16,7 +16,7 @@ namespace IFC4.Generators
             var typeIDs = new BlrdrsTypeIDGenerator(types, isAbstract);
 
 
-            var enumFileName = "entity_types_ifc.bldrs";
+            var enumFileName = "entity_types_ifc.gen";
             var enumPath = Path.Combine(directory, enumFileName + ".ts" );
             var enumBuilder = new StringBuilder();
 
@@ -24,7 +24,7 @@ namespace IFC4.Generators
                  
             File.WriteAllText(enumPath, enumBuilder.ToString());
 
-            var searchPath = Path.Combine(directory, "entity_types_search.bldrs.ts");
+            var searchPath = Path.Combine(directory, "entity_types_search.gen.ts");
             var searchBuilder = new StringBuilder();
 
             typeIDs.GenerateHashData(searchBuilder, "EntityTypesIfc", enumFileName, 0);
@@ -39,11 +39,11 @@ namespace IFC4.Generators
 
             File.WriteAllText(internalPath, internalBuilder.ToString());
 
-            var schemaFileName = "schema_ifc.bldrs";
+            var schemaFileName = "schema_ifc.gen";
             var schemaPath = Path.Combine(directory, schemaFileName + ".ts");
             var schemaBuilder = new StringBuilder();
 
-            typeIDs.GenerateSchema(schemaBuilder, "SchemaIfc", 0, "EntityTypesIfc", enumFileName, "EntityTypesIfcSearch", "entity_types_search.bldrs");
+            typeIDs.GenerateSchema(schemaBuilder, "SchemaIfc", 0, "EntityTypesIfc", enumFileName, "EntityTypesIfcSearch", "entity_types_search.gen");
             File.WriteAllText(schemaPath, schemaBuilder.ToString());
         }
     }
