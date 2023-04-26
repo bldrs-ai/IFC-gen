@@ -62,12 +62,109 @@ namespace IFC4.Generators
             }
         }
 
-        public void GenerateSchema(StringBuilder output, string name, int indent, string entityTypesName, string entityTypesFile, string entitySearchTypesName, string entitySearchTypesFile )
+        public void GenerateAttributeDescription(StringBuilder output, string type, string entityTypeName, Dictionary<string, TypeData> typesData, Dictionary< string, SelectType> selectTypes, string indent, bool isOptional, bool isDerived, bool isCollection, int rank, bool parentIsSelect )
+        {
+            var typeKind = BldrsAttributeGenerator.GetAttributeKind(type, typesData, parentIsSelect);
+
+            output.AppendLine($"{{");
+            output.AppendLine($"{indent}  kind: FieldDescriptionKind.{typeKind},");
+
+            if ( isCollection )
+            {
+                output.AppendLine($"{indent}  rank: {rank},");
+            }
+
+            output.AppendLine($"{indent}  optional: {(isOptional || (type == "IfcLogical" && !parentIsSelect) ? "true" : "false")},");
+            output.AppendLine($"{indent}  derived: {(isDerived ? "true" : "false")},");
+
+            switch ( typeKind )
+            {
+            case BldrsStepKind.SELECT:
+                {
+                    output.AppendLine($"{indent}  options: [");
+
+                    string indentOptions = indent + "    ";
+
+                  //  var selectType = typesData[type] as SelectType;                    
+
+                    foreach ( var option in BldrsSelectGenerator.ExpandPossibleTypes(type, selectTypes) )
+                    {
+                        output.Append($"{indent}    ");
+
+                        GenerateAttributeDescription( output, option, entityTypeName, typesData, selectTypes, indentOptions, false, false, false, 0, true );
+                    }
+
+                    output.AppendLine($"{indent}  ],");
+                }
+
+                break;
+
+            case BldrsStepKind.ENUM:
+                {
+                    output.AppendLine($"{indent}  type: {type},");
+                }
+                break;
+
+            case BldrsStepKind.STEP_REFERENCE:
+                {
+                    output.AppendLine($"{indent}  type: {entityTypeName}.{type.ToUpperInvariant()},");
+                }
+                break;
+            }
+
+            output.AppendLine($"{indent}}},");
+        }
+
+        public void GenerateEntityDescription( StringBuilder output, string entityTypesName, Entity entity, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string indent )
+        {
+            output.AppendLine($"{indent}{{");
+            output.AppendLine($"{indent}  fields: {{");
+
+            string attributeIndent = indent + "    ";
+
+            foreach ( var attribute in entity.Attributes )
+            {
+                output.Append($"{attributeIndent}{attribute.Name}: ");
+
+                GenerateAttributeDescription(output, attribute.type, entityTypesName, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false);
+            }
+
+            output.AppendLine($"{indent}  }},");
+            output.AppendLine($"{indent}  typeId: {entityTypesName}.{entity.Name.ToUpperInvariant()},");
+
+            output.AppendLine($"{indent}}},");
+        }
+
+        public void GenerateWrappedDescription(StringBuilder output, string entityTypesName, WrapperType wrapperType, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string indent)
+        {
+            output.AppendLine($"{indent}{{");
+            output.AppendLine($"{indent}  fields: {{");
+
+            string attributeIndent = indent + "    ";
+
+            output.Append($"{attributeIndent}Value: ");
+
+            GenerateAttributeDescription(output, wrapperType.WrappedType, entityTypesName, typesData, selectTypes, attributeIndent, false, false, wrapperType.IsCollectionType, wrapperType.Rank, false);
+
+            output.AppendLine($"{indent}  }},");
+            output.AppendLine($"{indent}  typeId: {entityTypesName}.{wrapperType.Name.ToUpperInvariant()},");
+            output.AppendLine($"{indent}}},");
+        }
+
+        public void GenerateSchema(StringBuilder output, string name, int indent, string entityTypesName, string entityTypesFile, string entitySearchTypesName, string entitySearchTypesFile, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes)
         {
             string indent0 = new string(' ', indent * 2);
             string indent1 = new string(' ', (indent + 1) * 2);
 
             output.AppendLine($"/* This is generated code, don't alter */");
+            output.AppendLine(@"import {
+  FieldDescriptionKind,
+  EntityEnumFieldDescription,
+  EntityFieldDescription,
+  EntityReferenceFieldDescription,
+  EntitySelectFieldDescription,
+} from '../../core/entity_field_description'" );
+            output.AppendLine("import { EntityDescription } from '../../core/entity_description'");
             output.AppendLine($"{indent0}import {entityTypesName} from './{entityTypesFile}'");
             output.AppendLine($"{indent0}import {entitySearchTypesName} from './{entitySearchTypesFile}'");
             output.AppendLine($"{indent0}import StepEntityConstructor from '../../core/step_entity_constructor'");
@@ -83,6 +180,11 @@ namespace IFC4.Generators
 
                     output.AppendLine($"{indent0}import {{ {localName} }} from './index'");
                 }
+            }
+
+            foreach ( var enumType in typesData.Values.Where( type => type is EnumData && !(type is SelectType)).Select( type => type as EnumData).OrderBy( type => type.Name ) )
+            {
+                output.AppendLine($"{indent0}import {{ {enumType.Name} }} from './index'");
             }
 
             output.AppendLine($"{indent0}let constructors : ( StepEntityConstructor< {entityTypesName}, StepEntityBase< {entityTypesName} > > | undefined )[]  = [");
@@ -113,11 +215,27 @@ namespace IFC4.Generators
             }
 
             output.AppendLine($"{indent0}]");
+            output.AppendLine($"{indent0}let descriptions : EntityDescription< {entityTypesName} >[] = [");
 
-            output.AppendLine();
+
+            for (int where = 0; where < Names.Length; ++where)
+            {
+                string localName = Names[where];
+
+                var typeData = typesData[localName];
+
+                if (typeData is Entity entity)
+                {
+                    GenerateEntityDescription(output, entityTypesName, entity, typesData, selectTypes, indent1);
+                }
+
+            }
+
+            output.AppendLine($"{indent0}]");
+
             output.AppendLine($"let parser =\n  new StepParser< {entityTypesName} >( {entitySearchTypesName} )");
             output.AppendLine();
-            output.AppendLine($"let {name} =\n  new StepEntitySchema< {entityTypesName} >( constructors, parser, queries )");
+            output.AppendLine($"let {name} =\n  new StepEntitySchema< {entityTypesName} >( constructors, parser, queries, descriptions )");
             output.AppendLine();
             output.AppendLine($"export default {name}");
         }

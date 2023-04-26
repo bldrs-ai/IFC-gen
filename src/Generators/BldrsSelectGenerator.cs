@@ -25,7 +25,7 @@ namespace IFC4.Generators
                 result.AddRange(ExpandPossibleTypes(v, selectTypes));
             }
 
-            return result;
+            return result.Distinct();
         }
 
         public static string GenerateSelectType(SelectType data, Dictionary< string, SelectType> selectTypes)

@@ -144,7 +144,7 @@ namespace IFC4.Generators
             var componentTypeNames = Enumerable.Concat( componentTypes_.Select(type => type.Name), wrappedTypes_.Select( type => type.Name ) );
             var abstractTypeNames = Enumerable.Concat( componentTypes_.Select(type => type.IsAbstract), wrappedTypes_.Select( type => false ) );
 
-            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames, TypesData);
+            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames, TypesData, SelectData);
         }
         public string SelectTypeString(SelectType data)
         {

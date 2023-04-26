@@ -7,6 +7,17 @@ using System.Threading.Tasks;
 
 namespace IFC4.Generators
 {
+    public enum BldrsStepKind
+    {
+        SELECT = 0,
+        NUMBER = 1,
+        STRING = 2,
+        BOOLEAN = 3,
+        STEP_REFERENCE = 4,
+        ENUM = 5,
+        BINARY_DATA = 6
+    }
+
     public static class BldrsAttributeGenerator
     {
         public static readonly string[] DeserializationFunctions =
@@ -22,6 +33,47 @@ namespace IFC4.Generators
             "stepExtractArray",
             "stepExtractLogical"
         };
+
+        public static BldrsStepKind GetAttributeKind(string type, Dictionary<string, TypeData> typesData, bool parentIsSelect = false)
+        {
+            if (!typesData.ContainsKey(type))
+            {
+                return type switch
+                {
+                    "boolean" => BldrsStepKind.BOOLEAN,
+                    "number" => BldrsStepKind.NUMBER,
+                    "string" => BldrsStepKind.STRING,
+                    "[Uint8Array, number]" => BldrsStepKind.BINARY_DATA,
+                    _ => throw new Exception("Unknown type requested for attribute kind")
+                };
+            }
+
+            var typeData = typesData[type];
+
+            if (typeData is WrapperType wrapper)
+            {
+                if ( parentIsSelect )
+                {
+                    return BldrsStepKind.STEP_REFERENCE;
+                }
+
+                return GetAttributeKind(wrapper.WrappedType, typesData, false);
+            }
+            else if (typeData is Entity)
+            {
+                return BldrsStepKind.STEP_REFERENCE;
+            }
+            else if (typeData is SelectType)
+            {
+                return BldrsStepKind.SELECT;
+            }
+            else if (typeData is EnumData)
+            {
+                return BldrsStepKind.ENUM;
+            }
+
+            throw new Exception("Unknown type requested for attribute kind");
+        }
 
         public static string AttributeDataString(AttributeData data, Dictionary<string, TypeData> typesData)
         {
