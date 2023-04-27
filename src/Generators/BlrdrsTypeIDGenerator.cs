@@ -85,8 +85,6 @@ namespace IFC4.Generators
 
                     string indentOptions = indent + "    ";
 
-                  //  var selectType = typesData[type] as SelectType;                    
-
                     foreach ( var option in BldrsSelectGenerator.ExpandPossibleTypes(type, selectTypes) )
                     {
                         output.Append($"{indent}    ");
@@ -131,6 +129,26 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent}  }},");
             output.AppendLine($"{indent}  typeId: {entityTypesName}.{entity.Name.ToUpperInvariant()},");
+            output.AppendLine($"{indent}  isAbstract: {(entity.IsAbstract ? "true" : "false")},");
+
+            // The terminology for IFC-gen is actually backwards re super and sub-types.
+            if ( entity.Subs.Count > 0 )
+            {
+                output.AppendLine($"{indent}  superType: {entityTypesName}.{entity.Subs[0].Name.ToUpperInvariant()},");
+            }
+            
+            if (entity.Supers.Count > 0)
+            {
+                output.AppendLine($"{indent}  subTypes: [");
+
+                foreach (var super in entity.Supers)
+                {
+                    output.AppendLine($"{indent}     {entityTypesName}.{super.Name.ToUpperInvariant()},");
+                }
+
+                output.AppendLine($"{indent}  ],");
+            }
+
 
             output.AppendLine($"{indent}}},");
         }
@@ -148,6 +166,7 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent}  }},");
             output.AppendLine($"{indent}  typeId: {entityTypesName}.{wrapperType.Name.ToUpperInvariant()},");
+            output.AppendLine($"{indent}  isAbstract: false,");
             output.AppendLine($"{indent}}},");
         }
 
