@@ -193,12 +193,9 @@ namespace IFC4.Generators
 
             for (int where = 0; where < Names.Length; ++where)
             {
-            //    if (!IsAbstract[where])
-                {
-                    string localName = Names[where];
+                string localName = Names[where];
 
-                    output.AppendLine($"{indent0}import {{ {localName} }} from './index'");
-                }
+                output.AppendLine($"{indent0}import {{ {localName} }} from './index'");
             }
 
             foreach ( var enumType in typesData.Values.Where( type => type is EnumData && !(type is SelectType)).Select( type => type as EnumData).OrderBy( type => type.Name ) )

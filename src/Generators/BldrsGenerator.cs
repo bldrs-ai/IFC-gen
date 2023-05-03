@@ -38,7 +38,7 @@ namespace IFC4.Generators
             {
                 if (SelectData.ContainsKey(type))
                 {
-                    var unionType = string.Join('|', BldrsSelectGenerator.ExpandPossibleTypes(type, SelectData));
+                    var unionType = string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(type, SelectData));
 
                     return $"{string.Join("", Enumerable.Repeat("Array<", rank))}{unionType}{string.Join("", Enumerable.Repeat(">", rank))}";
                 }
@@ -62,7 +62,7 @@ namespace IFC4.Generators
 
             if (SelectData.ContainsKey(type))
             {
-                return string.Join('|', BldrsSelectGenerator.ExpandPossibleTypes(type, SelectData));
+                return string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(type, SelectData));
             }
 
             return type;
