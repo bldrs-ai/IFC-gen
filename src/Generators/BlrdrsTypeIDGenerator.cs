@@ -62,12 +62,12 @@ namespace IFC4.Generators
             }
         }
 
-        public void GenerateAttributeDescription(StringBuilder output, string type, string entityTypeName, Dictionary<string, TypeData> typesData, Dictionary< string, SelectType> selectTypes, string indent, bool isOptional, bool isDerived, bool isCollection, int rank, bool parentIsSelect )
+        public void GenerateAttributeDescription(StringBuilder output, string type, Dictionary<string, TypeData> typesData, Dictionary< string, SelectType> selectTypes, string indent, bool isOptional, bool isDerived, bool isCollection, int rank, bool parentIsSelect )
         {
             var typeKind = BldrsAttributeGenerator.GetAttributeKind(type, typesData, parentIsSelect);
 
             output.AppendLine($"{{");
-            output.AppendLine($"{indent}  kind: FieldDescriptionKind.{typeKind},");
+            output.AppendLine($"{indent}  kind: f.{typeKind},");
 
             if ( isCollection )
             {
@@ -89,7 +89,7 @@ namespace IFC4.Generators
                     {
                         output.Append($"{indent}    ");
 
-                        GenerateAttributeDescription( output, option, entityTypeName, typesData, selectTypes, indentOptions, false, false, false, 0, true );
+                        GenerateAttributeDescription( output, option, typesData, selectTypes, indentOptions, false, false, false, 0, true );
                     }
 
                     output.AppendLine($"{indent}  ],");
@@ -105,7 +105,7 @@ namespace IFC4.Generators
 
             case BldrsStepKind.STEP_REFERENCE:
                 {
-                    output.AppendLine($"{indent}  type: {entityTypeName}.{type.ToUpperInvariant()},");
+                    output.AppendLine($"{indent}  type: e.{type.ToUpperInvariant()},");
                 }
                 break;
             }
@@ -113,7 +113,7 @@ namespace IFC4.Generators
             output.AppendLine($"{indent}}},");
         }
 
-        public void GenerateEntityDescription( StringBuilder output, string entityTypesName, Entity entity, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string indent )
+        public void GenerateEntityDescription( StringBuilder output, Entity entity, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string indent )
         {
             output.AppendLine($"{indent}{{");
             output.AppendLine($"{indent}  fields: {{");
@@ -124,17 +124,17 @@ namespace IFC4.Generators
             {
                 output.Append($"{attributeIndent}{attribute.Name}: ");
 
-                GenerateAttributeDescription(output, attribute.type, entityTypesName, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false);
+                GenerateAttributeDescription(output, attribute.type, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false);
             }
 
             output.AppendLine($"{indent}  }},");
-            output.AppendLine($"{indent}  typeId: {entityTypesName}.{entity.Name.ToUpperInvariant()},");
+            output.AppendLine($"{indent}  typeId: e.{entity.Name.ToUpperInvariant()},");
             output.AppendLine($"{indent}  isAbstract: {(entity.IsAbstract ? "true" : "false")},");
 
             // The terminology for IFC-gen is actually backwards re super and sub-types.
             if ( entity.Subs.Count > 0 )
             {
-                output.AppendLine($"{indent}  superType: {entityTypesName}.{entity.Subs[0].Name.ToUpperInvariant()},");
+                output.AppendLine($"{indent}  superType: e.{entity.Subs[0].Name.ToUpperInvariant()},");
             }
             
             if (entity.Supers.Count > 0)
@@ -143,7 +143,7 @@ namespace IFC4.Generators
 
                 foreach (var super in entity.Supers)
                 {
-                    output.AppendLine($"{indent}     {entityTypesName}.{super.Name.ToUpperInvariant()},");
+                    output.AppendLine($"{indent}     e.{super.Name.ToUpperInvariant()},");
                 }
 
                 output.AppendLine($"{indent}  ],");
@@ -153,7 +153,7 @@ namespace IFC4.Generators
             output.AppendLine($"{indent}}},");
         }
 
-        public void GenerateWrappedDescription(StringBuilder output, string entityTypesName, WrapperType wrapperType, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string indent)
+        public void GenerateWrappedDescription(StringBuilder output, WrapperType wrapperType, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string indent)
         {
             output.AppendLine($"{indent}{{");
             output.AppendLine($"{indent}  fields: {{");
@@ -162,10 +162,10 @@ namespace IFC4.Generators
 
             output.Append($"{attributeIndent}Value: ");
 
-            GenerateAttributeDescription(output, wrapperType.WrappedType, entityTypesName, typesData, selectTypes, attributeIndent, false, false, wrapperType.IsCollectionType, wrapperType.Rank, false);
+            GenerateAttributeDescription(output, wrapperType.WrappedType, typesData, selectTypes, attributeIndent, false, false, wrapperType.IsCollectionType, wrapperType.Rank, false);
 
             output.AppendLine($"{indent}  }},");
-            output.AppendLine($"{indent}  typeId: {entityTypesName}.{wrapperType.Name.ToUpperInvariant()},");
+            output.AppendLine($"{indent}  typeId: e.{wrapperType.Name.ToUpperInvariant()},");
             output.AppendLine($"{indent}  isAbstract: false,");
             output.AppendLine($"{indent}}},");
         }
@@ -221,6 +221,9 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent0}]");
 
+            output.AppendLine("const f = FieldDescriptionKind");
+            output.AppendLine($"const e = {entityTypesName}");
+
             output.AppendLine($"{indent0}let queries : {entityTypesName}[][] = [");
 
             for (int where = 0; where < Names.Length; ++where)
@@ -242,9 +245,12 @@ namespace IFC4.Generators
 
                 if (typeData is Entity entity)
                 {
-                    GenerateEntityDescription(output, entityTypesName, entity, typesData, selectTypes, indent1);
+                    GenerateEntityDescription(output, entity, typesData, selectTypes, indent1);
                 }
-
+                else if (typeData is WrapperType wrapper)
+                {
+                    GenerateWrappedDescription(output, wrapper, typesData, selectTypes, indent1);
+                }
             }
 
             output.AppendLine($"{indent0}]");
