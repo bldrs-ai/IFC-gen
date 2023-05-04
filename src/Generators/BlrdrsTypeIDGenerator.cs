@@ -247,6 +247,10 @@ namespace IFC4.Generators
                 {
                     GenerateEntityDescription(output, entityTypesName, entity, typesData, selectTypes, indent1);
                 }
+                else if (typeData is WrapperType wrapper)
+                {
+                    GenerateWrappedDescription(output, entityTypesName, wrapper, typesData, selectTypes, indent1);
+                }
 
             }
 
