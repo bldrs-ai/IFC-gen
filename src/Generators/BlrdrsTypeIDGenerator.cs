@@ -190,18 +190,14 @@ namespace IFC4.Generators
             output.AppendLine($"/* This is generated code, don't alter */");
             output.AppendLine(@"import {
   FieldDescriptionKind,
-  EntityEnumFieldDescription,
-  EntityFieldDescription,
-  EntityReferenceFieldDescription,
-  EntitySelectFieldDescription,
 } from '../../core/entity_field_description'" );
             output.AppendLine("import { EntityDescription } from '../../core/entity_description'");
             output.AppendLine($"{indent0}import {entityTypesName} from './{entityTypesFile}'");
             output.AppendLine($"{indent0}import {entitySearchTypesName} from './{entitySearchTypesFile}'");
-            output.AppendLine($"{indent0}import StepEntityConstructor from '../../core/step_entity_constructor'");
-            output.AppendLine($"{indent0}import StepEntityBase from '../../core/step_entity_base'");
-            output.AppendLine($"{indent0}import StepEntitySchema from '../../core/step_entity_schema'");
-            output.AppendLine($"{indent0}import StepParser from '../../../dependencies/conway-ds/src/parsing/step/step_parser'");
+            output.AppendLine($"{indent0}import StepEntityConstructor from '../../step/step_entity_constructor'");
+            output.AppendLine($"{indent0}import StepEntityBase from '../../step/step_entity_base'");
+            output.AppendLine($"{indent0}import StepEntitySchema from '../../step/step_entity_schema'");
+            output.AppendLine($"{indent0}import StepParser from '../../step/parsing/step_parser'");
 
             for (int where = 0; where < Names.Length; ++where)
             {
@@ -324,7 +320,7 @@ namespace IFC4.Generators
             string indent1 = new string(' ', (indent + 1) * 4);
 
             output.AppendLine("/* This is generated code, don't alter */");
-            output.AppendLine("import MinimalPerfectHash from '../../../dependencies/conway-ds/src/indexing/minimal_perfect_hash'");
+            output.AppendLine("import MinimalPerfectHash from '../../indexing/minimal_perfect_hash'");
 
             if (!String.IsNullOrEmpty(enumFile))
             {
