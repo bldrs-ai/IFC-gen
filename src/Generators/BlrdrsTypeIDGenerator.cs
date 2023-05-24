@@ -62,7 +62,7 @@ namespace IFC4.Generators
             }
         }
 
-        public void GenerateAttributeDescription(StringBuilder output, string type, Dictionary<string, TypeData> typesData, Dictionary< string, SelectType> selectTypes, string indent, bool isOptional, bool isDerived, bool isCollection, int rank, bool parentIsSelect )
+        public void GenerateAttributeDescription(StringBuilder output, string type, Dictionary<string, TypeData> typesData, Dictionary< string, SelectType> selectTypes, string indent, bool isOptional, bool isDerived, bool isCollection, int rank, bool parentIsSelect, uint vtableOffset )
         {
             var typeKind = BldrsAttributeGenerator.GetAttributeKind(type, typesData, parentIsSelect);
 
@@ -77,6 +77,11 @@ namespace IFC4.Generators
             output.AppendLine($"{indent}  optional: {(isOptional || (type == "IfcLogical" && !parentIsSelect) ? "true" : "false")},");
             output.AppendLine($"{indent}  derived: {(isDerived ? "true" : "false")},");
 
+            if ( !isDerived && !parentIsSelect )
+            {
+                output.AppendLine($"{indent}  offset: {vtableOffset},");
+            }
+
             switch ( typeKind )
             {
             case BldrsStepKind.SELECT:
@@ -89,7 +94,7 @@ namespace IFC4.Generators
                     {
                         output.Append($"{indent}    ");
 
-                        GenerateAttributeDescription( output, option, typesData, selectTypes, indentOptions, false, false, false, 0, true );
+                        GenerateAttributeDescription( output, option, typesData, selectTypes, indentOptions, false, false, false, 0, true, vtableOffset );
                     }
 
                     output.AppendLine($"{indent}  ],");
@@ -120,11 +125,18 @@ namespace IFC4.Generators
 
             string attributeIndent = indent + "    ";
 
+            uint baseFieldOffset = 0;
+
+            if (entity.Subs.Count > 0)
+            {
+                baseFieldOffset = BldrsEntityGenerator.FieldCountWithParents(entity.Subs[0]);
+            }
+
             foreach ( var attribute in entity.Attributes )
             {
                 output.Append($"{attributeIndent}{attribute.Name}: ");
 
-                GenerateAttributeDescription(output, attribute.type, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false);
+                GenerateAttributeDescription(output, attribute.type, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false, ++baseFieldOffset);
             }
 
             output.AppendLine($"{indent}  }},");
@@ -162,7 +174,7 @@ namespace IFC4.Generators
 
             output.Append($"{attributeIndent}Value: ");
 
-            GenerateAttributeDescription(output, wrapperType.WrappedType, typesData, selectTypes, attributeIndent, false, false, wrapperType.IsCollectionType, wrapperType.Rank, false);
+            GenerateAttributeDescription(output, wrapperType.WrappedType, typesData, selectTypes, attributeIndent, false, false, wrapperType.IsCollectionType, wrapperType.Rank, false, 0);
 
             output.AppendLine($"{indent}  }},");
             output.AppendLine($"{indent}  typeId: e.{wrapperType.Name.ToUpperInvariant()},");
