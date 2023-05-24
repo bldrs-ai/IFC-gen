@@ -61,10 +61,98 @@ namespace IFC4.Generators
             return ownCount;
         }
 
+        public static readonly string[] StepDeserializationFunctions =
+        {
+            "stepExtractBoolean",
+            "stepExtractEnum",
+            "stepExtractString",
+            "stepExtractOptional",
+            "stepExtractBinary",
+            "stepExtractReference",
+            "stepExtractNumber",
+            "stepExtractInlineElemement",
+            "stepExtractArray",
+            "stepExtractLogical",
+            "NVL",
+            "HIINDEX",
+            "SIZEOF",
+        };
+
+        public static readonly string[] IfcIntrinsicFunctions =
+        {
+            "IfcBaseAxis",
+            "IfcBooleanChoose",
+            "IfcBuild2Axes",
+            "IfcBuildAxes",
+            "IfcConstraintsParamBSpline",
+            "IfcConvertDirectionInto2D",
+            "IfcCorrectDimensions",
+            "IfcCorrectFillAreaStyle",
+            "IfcCorrectLocalPlacement",
+            "IfcCorrectObjectAssignment",
+            "IfcCorrectUnitAssignment",
+            "IfcCrossProduct",
+            "IfcCurveDim",
+            "IfcDeriveDimensionalExponents",
+            "IfcDimensionsForSiUnit",
+            "IfcDotProduct",
+            "IfcFirstProjAxis",
+            "IfcListToArray",
+            "IfcLoopHeadToTail",
+            "IfcMakeArrayOfArray",
+            "IfcMlsTotalThickness",
+            "IfcNormalise",
+            "IfcOrthogonalComplement",
+            "IfcPathHeadToTail",
+            "IfcSameAxis2Placement",
+            "IfcSameCartesianPoint",
+            "IfcSameDirection",
+            "IfcSameValidPrecision",
+            "IfcSameValue",
+            "IfcScalarTimesVector",
+            "IfcSecondProjAxis",
+            "IfcShapeRepresentationTypes",
+            "IfcTaperedSweptAreaProfiles",
+            "IfcTopologyRepresentationTypes",
+            "IfcUniqueDefinitionNames",
+            "IfcUniquePropertyName",
+            "IfcUniquePropertySetNames",
+            "IfcUniqueQuantityNames",
+            "IfcVectorDifference",
+            "IfcVectorSum",
+            "IfcPointListDim",
+            "IfcGetBasisSurface"
+        };
+
+        public static void AddDependentFunctions( StringBuilder importBuilder, string[] functions, HashSet< string > importList, string fromFile )
+        {
+            bool firstFunction = true;
+
+            foreach (string stepDeserializationFunction in functions)
+            {
+                if (importList.Contains(stepDeserializationFunction))
+                {
+                    if (firstFunction)
+                    {
+                        importBuilder.AppendLine("import {");
+                        firstFunction = false;
+                    }
+
+                    importBuilder.AppendLine($"  {stepDeserializationFunction},");
+                }
+            }
+
+            if (!firstFunction)
+            {
+                importBuilder.AppendLine($"}} from '{fromFile}'");
+            }
+        }
+
         public static string EntityString(Entity data, Dictionary<string, SelectType> selectData, Dictionary< string, TypeData > typeData )
           {
             var importBuilder = new StringBuilder();
             var propertyBuilder = new StringBuilder();
+            var importList = new HashSet<string>();
 
             foreach (var d in Dependencies(data, selectData))
             {
@@ -107,7 +195,7 @@ namespace IFC4.Generators
 
                 first = false;
 
-                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric) );
+                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric, importList) );
             }
 
             //        constructors = $@"
@@ -115,74 +203,17 @@ namespace IFC4.Generators
             //    super({baseconstructorparams(data, false)}){assignments(data, false)}
             //}}";
 
+            AddDependentFunctions(importBuilder, StepDeserializationFunctions, importList, "../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions");
+            AddDependentFunctions(importBuilder, IfcIntrinsicFunctions, importList, "../../core/ifc/ifc_functions");
+
             var result =
 $@"
 {importBuilder.ToString()}
 /* This is generated code, don't modify */
-import EntityTypesIfc from ""./entity_types_ifc.gen""
-import StepEntityInternalReference from ""../../core/step_entity_internal_reference""
-import StepEntityBase from ""../../core/step_entity_base""
-import StepModelBase from ""../../core/step_model_base""
-import {{
-  stepExtractBoolean,
-  stepExtractEnum,
-  stepExtractString,
-  stepExtractOptional,
-  stepExtractBinary,
-  stepExtractReference,
-  stepExtractNumber,
-  stepExtractInlineElemement,
-  stepExtractArray,
-  stepExtractLogical,
-  NVL,
-  HIINDEX,
-  SIZEOF
-}} from '../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions'
-
-import {{
-  IfcBaseAxis,
-  IfcBooleanChoose,
-  IfcBuild2Axes,
-  IfcBuildAxes,
-  IfcConstraintsParamBSpline,
-  IfcConvertDirectionInto2D,
-  IfcCorrectDimensions,
-  IfcCorrectFillAreaStyle,
-  IfcCorrectLocalPlacement,
-  IfcCorrectObjectAssignment,
-  IfcCorrectUnitAssignment,
-  IfcCrossProduct,
-  IfcCurveDim,
-  IfcDeriveDimensionalExponents,
-  IfcDimensionsForSiUnit,
-  IfcDotProduct,
-  IfcFirstProjAxis,
-  IfcListToArray,
-  IfcLoopHeadToTail,
-  IfcMakeArrayOfArray,
-  IfcMlsTotalThickness,
-  IfcNormalise,
-  IfcOrthogonalComplement,
-  IfcPathHeadToTail,
-  IfcSameAxis2Placement,
-  IfcSameCartesianPoint,
-  IfcSameDirection,
-  IfcSameValidPrecision,
-  IfcSameValue,
-  IfcScalarTimesVector,
-  IfcSecondProjAxis,
-  IfcShapeRepresentationTypes,
-  IfcTaperedSweptAreaProfiles,
-  IfcTopologyRepresentationTypes,
-  IfcUniqueDefinitionNames,
-  IfcUniquePropertyName,
-  IfcUniquePropertySetNames,
-  IfcUniqueQuantityNames,
-  IfcVectorDifference,
-  IfcVectorSum,
-  IfcPointListDim,
-  IfcGetBasisSurface
-}} from ""../../core/ifc/ifc_functions""
+import EntityTypesIfc from './entity_types_ifc.gen'
+import StepEntityInternalReference from '../../core/step_entity_internal_reference'
+import StepEntityBase from '../../core/step_entity_base'
+import StepModelBase from '../../core/step_model_base'
 
 ///**
 // * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */

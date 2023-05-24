@@ -7,8 +7,74 @@ using System.Threading.Tasks;
 
 namespace IFC4.Generators
 {
+    public enum BldrsStepKind
+    {
+        SELECT = 0,
+        NUMBER = 1,
+        STRING = 2,
+        BOOLEAN = 3,
+        STEP_REFERENCE = 4,
+        ENUM = 5,
+        BINARY_DATA = 6
+    }
+
     public static class BldrsAttributeGenerator
     {
+        public static readonly string[] DeserializationFunctions =
+        {
+            "stepExtractBoolean",
+            "stepExtractEnum",
+            "stepExtractString",
+            "stepExtractOptional",
+            "stepExtractBinary",
+            "stepExtractReference",
+            "stepExtractNumber",
+            "stepExtractInlineElemement",
+            "stepExtractArray",
+            "stepExtractLogical"
+        };
+
+        public static BldrsStepKind GetAttributeKind(string type, Dictionary<string, TypeData> typesData, bool parentIsSelect = false)
+        {
+            if (!typesData.ContainsKey(type))
+            {
+                return type switch
+                {
+                    "boolean" => BldrsStepKind.BOOLEAN,
+                    "number" => BldrsStepKind.NUMBER,
+                    "string" => BldrsStepKind.STRING,
+                    "[Uint8Array, number]" => BldrsStepKind.BINARY_DATA,
+                    _ => throw new Exception("Unknown type requested for attribute kind")
+                };
+            }
+
+            var typeData = typesData[type];
+
+            if (typeData is WrapperType wrapper)
+            {
+                if ( parentIsSelect )
+                {
+                    return BldrsStepKind.STEP_REFERENCE;
+                }
+
+                return GetAttributeKind(wrapper.WrappedType, typesData, false);
+            }
+            else if (typeData is Entity)
+            {
+                return BldrsStepKind.STEP_REFERENCE;
+            }
+            else if (typeData is SelectType)
+            {
+                return BldrsStepKind.SELECT;
+            }
+            else if (typeData is EnumData)
+            {
+                return BldrsStepKind.ENUM;
+            }
+
+            throw new Exception("Unknown type requested for attribute kind");
+        }
+
         public static string AttributeDataString(AttributeData data, Dictionary<string, TypeData> typesData)
         {
             var type = data.InnerType;
@@ -102,7 +168,7 @@ $@"
 
                 }
 
-                    return @$"{commonPrefix}{nullPrefix}
+                return @$"{commonPrefix}{nullPrefix}
       let value : {valueType} = [];
 
       for ( let address of stepExtractArray( buffer, cursor, endCursor ) ) {{
@@ -241,7 +307,7 @@ $@"      if ( {instanceCheck} ) {{
             return "";
         }
 
-        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric)
+        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric, HashSet< string > importFunctions )
         {
             if (/*(data.IsDerived && !data.HidesParentAttributeOfSameName) ||*/ data.IsInverse)
             {
@@ -270,7 +336,7 @@ $@"      if ( {instanceCheck} ) {{
 
             if (data.IsDerived)
             {
-                string transformedExpression = BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression);
+                string transformedExpression = BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression, importFunctions);
 
                 if (  string.IsNullOrEmpty( transformedExpression ) )
                 {
@@ -279,15 +345,25 @@ $@"      if ( {instanceCheck} ) {{
 
                 return $@"
   public get {data.Name}() : {propertyTypeString} {{
-    return {BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression)}
+    return {transformedExpression}
   }}";
+            }
+
+            string deserialization = Deserialization(data, vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric);
+
+            foreach (string deserializationFunction in DeserializationFunctions)
+            {
+                if (deserialization.Contains(deserializationFunction))
+                {
+                    importFunctions.Add(deserializationFunction);
+                }
             }
 
             return $@"
   public get {data.Name}() : {propertyTypeString} {{
     if ( this.{data.Name}_ === void 0 ) {{
       this.{data.Name}_ = (() => {{ 
-        {Deserialization(data, vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric )} }})()
+        {deserialization} }})()
     }}
 
     return this.{data.Name}_ as {propertyTypeString}
