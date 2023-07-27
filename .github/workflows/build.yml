@@ -24,7 +24,9 @@ jobs:
 
       - name: Build and Generate
         id: build
-        run: make OUTDIR=dist/
+        run: |
+          mkdir dist/
+          make OUTDIR=dist/
 
       - name: Archive Generator
         id: archive-generator-assets
