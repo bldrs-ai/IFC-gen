@@ -1,0 +1,43 @@
+name: Development Build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build and Generate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Initialize .NET SDK (v6)
+        id: setup-dotnet-sdk
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6'
+
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v3
+
+      - name: Build and Generate
+        id: build
+        run: |
+          mkdir dist/
+          make OUTDIR=dist/
+
+      - name: Archive Generator
+        id: archive-generator-assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: generator
+          path: src/dist/
+
+      - name: Archive Generated Files
+        id: archive-generated-assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated
+          path: dist/
