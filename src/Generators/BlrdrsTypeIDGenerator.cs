@@ -136,7 +136,7 @@ namespace IFC4.Generators
             {
                 output.Append($"{attributeIndent}{attribute.Name}: ");
 
-                GenerateAttributeDescription(output, attribute.type, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false, ++baseFieldOffset);
+                GenerateAttributeDescription(output, attribute.type, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false, baseFieldOffset++);
             }
 
             output.AppendLine($"{indent}  }},");
@@ -243,7 +243,6 @@ namespace IFC4.Generators
 
             output.AppendLine($"{indent0}]");
             output.AppendLine($"{indent0}let descriptions : EntityDescription< {entityTypesName} >[] = [");
-
 
             for (int where = 0; where < Names.Length; ++where)
             {
