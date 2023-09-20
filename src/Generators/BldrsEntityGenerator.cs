@@ -71,8 +71,10 @@ namespace IFC4.Generators
             "stepExtractReference",
             "stepExtractNumber",
             "stepExtractInlineElemement",
-            "stepExtractArray",
             "stepExtractLogical",
+            "stepExtractArrayToken",
+            "stepExtractArrayBegin",
+            "skipValue",
             "NVL",
             "HIINDEX",
             "SIZEOF",
@@ -203,17 +205,17 @@ namespace IFC4.Generators
             //    super({baseconstructorparams(data, false)}){assignments(data, false)}
             //}}";
 
-            AddDependentFunctions(importBuilder, StepDeserializationFunctions, importList, "../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions");
-            AddDependentFunctions(importBuilder, IfcIntrinsicFunctions, importList, "../../core/ifc/ifc_functions");
+            AddDependentFunctions(importBuilder, StepDeserializationFunctions, importList, "../../step/parsing/step_deserialization_functions");
+            AddDependentFunctions(importBuilder, IfcIntrinsicFunctions, importList, "../ifc_functions");
 
             var result =
 $@"
 {importBuilder.ToString()}
 /* This is generated code, don't modify */
 import EntityTypesIfc from './entity_types_ifc.gen'
-import StepEntityInternalReference from '../../core/step_entity_internal_reference'
-import StepEntityBase from '../../core/step_entity_base'
-import StepModelBase from '../../core/step_model_base'
+import StepEntityInternalReference from '../../step/step_entity_internal_reference'
+import StepEntityBase from '../../step/step_entity_base'
+import StepModelBase from '../../step/step_model_base'
 
 ///**
 // * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */

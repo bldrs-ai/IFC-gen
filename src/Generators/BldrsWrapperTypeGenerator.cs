@@ -21,17 +21,17 @@ namespace IFC4.Generators
 
             string attributePropertyString = BldrsAttributeGenerator.AttributePropertyString(valueAttribute, 0, typesData, selectData, data.Rank, data.WrappedType, false, importList);
 
-            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.StepDeserializationFunctions, importList, "../../../dependencies/conway-ds/src/parsing/step/step_deserialization_functions");
-            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.IfcIntrinsicFunctions, importList, "../../core/ifc/ifc_functions");
+            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.StepDeserializationFunctions, importList, "../../step/parsing/step_deserialization_functions");
+            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.IfcIntrinsicFunctions, importList, "../ifc_functions");
 
             var result =
 $@"
 /* This is generated code, don't alter */
 {importBuilder.ToString()}{wrappedTypeImport}
 import EntityTypesIfc from './entity_types_ifc.gen'
-import StepEntityInternalReference from '../../core/step_entity_internal_reference'
-import StepEntityBase from '../../core/step_entity_base'
-import StepModelBase from '../../core/step_model_base'
+import StepEntityInternalReference from '../../step/step_entity_internal_reference'
+import StepEntityBase from '../../step/step_entity_base'
+import StepModelBase from '../../step/step_model_base'
 
 
 ///**

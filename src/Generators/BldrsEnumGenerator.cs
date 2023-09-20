@@ -22,7 +22,7 @@ namespace IFC4.Generators
             builder.AppendLine();
             builder.Append($@"
 /* This is generated cold, don't alter */
-import StepEnumParser from '../../../dependencies/conway-ds/src/parsing/step/step_enum_parser'
+import StepEnumParser from '../../step/parsing/step_enum_parser'
 
 const parser = StepEnumParser.Instance
 
