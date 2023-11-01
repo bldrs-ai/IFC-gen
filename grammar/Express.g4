@@ -193,7 +193,7 @@ derivedRedef
 // This is a path whose first fragment is an expression, and whose
 // second fragment is a path to the property on the resulting object.
 derivedPath
-	: expression '\\' Path
+	: expression '\\' WS? Path
 	;
 
 domainRule
@@ -644,6 +644,7 @@ stdFunc
 	| TYPEOF
 	| USEDIN
 	| VALUE
+  | UNKNOWN
 	;
 
 stdProc
@@ -917,7 +918,7 @@ WHILE : 'WHILE' ;
 XOR : 'XOR';
 
 SchemaDef 
-	: ('IFC4'|'IFC2X3')
+	: ('IFC4'|'IFC2X3'|'AUTOMOTIVE_DESIGN')
 	; 
 
 SimpleId
@@ -937,8 +938,8 @@ IndexExpr
 
 Path
 	: SELF
-	| SELF '\\' PathFragment // IFC: Ex: SELF\IfcEdgeLoop.EdgeList
-	| PathFragment ('\\' PathFragment)* // IFC: Ex: ElpFbnds.Bound\IfcEdgeLoop.EdgeList
+	| SELF ( '\\' WS? PathFragment ) // IFC: Ex: SELF\IfcEdgeLoop.EdgeList
+	| PathFragment ('\\' WS? PathFragment)* // IFC: Ex: ElpFbnds.Bound\IfcEdgeLoop.EdgeList
 	;
 
 IntegerLiteral
@@ -999,7 +1000,7 @@ WS
 	: [ \t\r\n\u000c]+ -> skip ;
 
 Comments 
-	: '(*' .*? '*)' -> skip ;
+	: ( ( '(*' .*? '*)' ) | ( '--' .*? NewlineChar ) ) -> skip ;
 
 // IFC: Skip rules
 // Rules

@@ -1,9 +1,10 @@
 SET ANTLR=java -jar C:\Javalib\antlr-4.7-complete.jar
 SET CURR_DIR=%cd%
-SET GRAMMAR_IFC=%CURR_DIR%\Express.g4
+SET GRAMMAR_IFC=%CURR_DIR%\grammar\Express.g4
 SET GRAMMAR_STEP=%CURR_DIR%\grammar\STEP.g4
-SET SCHEMA_VERSION=IFC
-SET SCHEMA=%CURR_DIR%\schemas\%SCHEMA_VERSION%.exp
+::SET SCHEMA_VERSION=AP214E3_2010
+SET %2
+SET SCHEMA=%CURR_DIR%\schemas\%SCHEMA_INPUT%.exp
 
 ::csharp:
 	set %1

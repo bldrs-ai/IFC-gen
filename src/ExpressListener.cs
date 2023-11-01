@@ -96,25 +96,30 @@ namespace Express
 			{
 				var super = subSuper.supertypeDecl();
 				entity.IsAbstract = super.ABSTRACT() != null;
-				var factor = super.supertypeExpr().supertypeFactor();
-				
-				// IFC: Use choice only.
-				if(factor[0].choice() != null)
+				var superTypeExpr = super.supertypeExpr();
+
+				if (superTypeExpr != null)
 				{
-					foreach(var superRef in factor[0].choice().supertypeExpr())
+					var factor = super.supertypeExpr().supertypeFactor();
+
+					// IFC: Use choice only.
+					if (factor[0].choice() != null)
 					{
-						var superName = superRef.supertypeFactor()[0].entityRef().SimpleId().GetText();
-						Entity sup;
-						if(typeData.ContainsKey(superName))
+						foreach (var superRef in factor[0].choice().supertypeExpr())
 						{
-							sup = (Entity)typeData[superName];
+							var superName = superRef.supertypeFactor()[0].entityRef().SimpleId().GetText();
+							Entity sup;
+							if (typeData.ContainsKey(superName))
+							{
+								sup = (Entity)typeData[superName];
+							}
+							else
+							{
+								sup = new Entity(superName, generator);
+								typeData.Add(superName, sup);
+							}
+							entity.Supers.Add(sup);
 						}
-						else
-						{
-							sup = new Entity(superName, generator);
-							typeData.Add(superName, sup);
-						}
-						entity.Supers.Add(sup);
 					}
 				}
 			}
@@ -383,8 +388,9 @@ namespace Express
 			}
 			else if(context.aggregateType() != null)
 			{
+				isCollection = true;
 				// not used in IFC
-				throw new NotImplementedException();
+				return ParseAllTypeSel(context.aggregateType().allTypeSel(), ref isCollection, ref isGeneric );
 			}
 			else if(context.conformantType() != null)
 			{

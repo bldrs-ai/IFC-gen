@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-// Generated from /Users/ikeough/Documents/IFC-gen/grammar/Express.g4 by ANTLR 4.7
+// Generated from C:\Users\cstok\source\repos\bldrs-datamodel\external\IFC-gen\grammar\Express.g4 by ANTLR 4.7
 
 // Unreachable code detected
 #pragma warning disable 0162
@@ -30,14 +30,12 @@ using IToken = Antlr4.Runtime.IToken;
 /// </summary>
 [System.CodeDom.Compiler.GeneratedCode("ANTLR", "4.7")]
 [System.CLSCompliant(false)]
-#pragma warning disable CS3021 // Type or member does not need a CLSCompliant attribute because the assembly does not have a CLSCompliant attribute
-    public interface IExpressListener : IParseTreeListener {
-#pragma warning restore CS3021 // Type or member does not need a CLSCompliant attribute because the assembly does not have a CLSCompliant attribute
-        /// <summary>
-        /// Enter a parse tree produced by <see cref="ExpressParser.actualParams"/>.
-        /// </summary>
-        /// <param name="context">The parse tree.</param>
-        void EnterActualParams([NotNull] ExpressParser.ActualParamsContext context);
+public interface IExpressListener : IParseTreeListener {
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExpressParser.actualParams"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterActualParams([NotNull] ExpressParser.ActualParamsContext context);
 	/// <summary>
 	/// Exit a parse tree produced by <see cref="ExpressParser.actualParams"/>.
 	/// </summary>
