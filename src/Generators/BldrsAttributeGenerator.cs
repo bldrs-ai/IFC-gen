@@ -175,7 +175,7 @@ namespace IFC4.Generators
             return "";
         }
 
-        public static string Deserialization( AttributeData data, string assignTo, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, bool isCollection, int rank, string type, bool isGeneric, int indent = 0, bool logical = false )
+        public static string Deserialization(AttributeData data, string assignTo, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, bool isCollection, int rank, string type, bool isGeneric, int indent = 0, bool logical = false)
         {
             if (isCollection)
             {
@@ -184,7 +184,12 @@ $@"
       if ( stepExtractOptional( buffer, cursor, endCursor ) === null ) {{
         return null
       }}
-" : "";
+" : 
+$@"
+      if ( stepExtractOptional( buffer, cursor, endCursor ) === null ) {{
+        return []
+      }}
+";
 
                 string innerType;
 
