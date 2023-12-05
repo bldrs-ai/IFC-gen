@@ -36,9 +36,9 @@ import StepModelBase from '../../step/step_model_base'
 
 ///**
 // * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */
-export class {data.Name} extends StepEntityBase< EntityTypesIfc > {{    
+export class {data.SanitizedName()} extends StepEntityBase< EntityTypesIfc > {{    
   public get type(): EntityTypesIfc {{
-    return EntityTypesIfc.{data.Name.ToUpperInvariant()}
+    return EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
   }}
 
   {BldrsAttributeGenerator.AttributeDataString(valueAttribute, typesData)};
@@ -52,10 +52,10 @@ export class {data.Name} extends StepEntityBase< EntityTypesIfc > {{
   }}
 
   public static readonly query =
-    [ EntityTypesIfc.{data.Name.ToUpperInvariant()} ]
+    [ EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()} ]
 
   public static readonly expectedType: EntityTypesIfc =
-    EntityTypesIfc.{data.Name.ToUpperInvariant()}
+    EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
 }}
 ";            return result;
 

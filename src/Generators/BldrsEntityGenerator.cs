@@ -9,7 +9,7 @@ namespace IFC4.Generators
 {
     public static class BldrsEntityGenerator
     {
-        public static IEnumerable<string> Dependencies(Entity entity, Dictionary<string, SelectType> selectData)
+        public static IEnumerable<string> Dependencies(Entity entity, Dictionary<string, SelectType> selectData, Dictionary<string, TypeData> typesData)
         {
          //   var parents = entity.ParentsAndSelf().Reverse();
        //     var attrs = parents.SelectMany(p => p.Attributes);
@@ -18,20 +18,20 @@ namespace IFC4.Generators
 
             if (entity.Subs.Count > 0)
             {
-                result.Add( entity.Subs[ 0 ].Name ); // attributes for all super types
+                result.Add( entity.Subs[ 0 ].SanitizedName() ); // attributes for all super types
             }
             //result.AddRange(entity.Supers.Select(s => s.Name)); // attributes for all super types
         //    result.AddRange(AddRelevantTypes(attrs, selectData)); // attributes for constructor parameters for parents
-            result.AddRange(AddRelevantTypes(entity.Attributes.Where( attr => /*(!attr.IsDerived || attr.HidesParentAttributeOfSameName) &&*/ !attr.IsInverse ), selectData)); // atributes of self
+            result.AddRange(AddRelevantTypes(entity.Attributes.Where( attr => /*(!attr.IsDerived || attr.HidesParentAttributeOfSameName) &&*/ !attr.IsInverse ), selectData, typesData)); // atributes of self
             //result.AddRange(this.Supers.Select(s=>s.Name)); // attributes for all sub-types
 
             var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
-            var types = result.Distinct().Where(t => !badTypes.Contains(t) && t != entity.Name);
+            var types = result.Distinct().Where(t => !badTypes.Contains(t) && t != entity.SanitizedName());
 
             return types;
         }
 
-        private static IEnumerable<string> AddRelevantTypes(IEnumerable<AttributeData> attrs, Dictionary<string, SelectType> selectData)
+        private static IEnumerable<string> AddRelevantTypes(IEnumerable<AttributeData> attrs, Dictionary<string, SelectType> selectData, Dictionary<string, TypeData> typesData)
         {
             var result = new List<string>();
 
@@ -156,10 +156,9 @@ namespace IFC4.Generators
             var propertyBuilder = new StringBuilder();
             var importList = new HashSet<string>();
 
-            foreach (var d in Dependencies(data, selectData))
+            foreach (var d in Dependencies(data, selectData, typeData))
             {
-
-                if ( typeData[d] is EnumType )
+                if ( typeData[d.DesanitizedName()] is EnumType )
                 {
                     importBuilder.AppendLine($"import {{ {d}, {d}DeserializeStep }} from \"./index\"");
                 }
@@ -177,11 +176,11 @@ namespace IFC4.Generators
 
             if (data.Subs.Count > 0)
             {
-                superClass = data.Subs[0].Name;
+                superClass = data.Subs[0].SanitizedName();
                 baseFieldCount = FieldCountWithParents(data.Subs[0]);
             }
 
-            string componenttypenames = $"[{string.Join(", ", data.ParentsAndSelf().Select(value => value.Name))}]";
+            string componenttypenames = $"[{string.Join(", ", data.ParentsAndSelf().Select(value => value.SanitizedName()))}]";
             string modifiers = data.IsAbstract ? "abstract" : string.Empty;
 
             bool first = true;
@@ -219,9 +218,9 @@ import StepModelBase from '../../step/step_model_base'
 
 ///**
 // * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */
-export {modifiers} class {data.Name} extends {superClass} {{
+export {modifiers} class {data.SanitizedName()} extends {superClass} {{
   public get type(): EntityTypesIfc {{
-    return EntityTypesIfc.{data.Name.ToUpperInvariant()}
+    return EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
   }}
 {String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"  {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)}" ))}
 {propertyBuilder.ToString()}
@@ -233,10 +232,10 @@ export {modifiers} class {data.Name} extends {superClass} {{
   }}
 
   public static readonly query = 
-    [ { string.Join( ", ", data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Select( childEntity => $"EntityTypesIfc.{childEntity.Name.ToUpperInvariant()}" ) ) } ]
+    [ { string.Join( ", ", data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Select( childEntity => $"EntityTypesIfc.{childEntity.SanitizedName().ToUpperInvariant()}" ) ) } ]
 
   public static readonly expectedType: EntityTypesIfc =
-    EntityTypesIfc.{data.Name.ToUpperInvariant()}
+    EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
 }}
 ";
 

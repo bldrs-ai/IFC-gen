@@ -16,9 +16,9 @@ namespace IFC4.Generators
 
             var builder = new StringBuilder();
 
-            typeIDGenerator.GenerateEnum(builder, data.Name, 0, false);
+            typeIDGenerator.GenerateEnum(builder, data.SanitizedName(), 0, false);
             builder.AppendLine();
-            typeIDGenerator.GenerateHashData(builder, data.Name, null, 0, false);
+            typeIDGenerator.GenerateHashData(builder, data.SanitizedName(), null, 0, false);
             builder.AppendLine();
             builder.Append($@"
 /* This is generated cold, don't alter */
@@ -26,11 +26,11 @@ import StepEnumParser from '../../step/parsing/step_enum_parser'
 
 const parser = StepEnumParser.Instance
 
-export function {data.Name}DeserializeStep(
+export function {data.SanitizedName()}DeserializeStep(
   input: Uint8Array,
   cursor: number,
-  endCursor: number ): {data.Name} | undefined {{
-  return parser.extract< {data.Name} >( {data.Name}Search, input, cursor, endCursor )
+  endCursor: number ): {data.SanitizedName()} | undefined {{
+  return parser.extract< {data.SanitizedName()} >( {data.SanitizedName()}Search, input, cursor, endCursor )
 }}
 ");
 

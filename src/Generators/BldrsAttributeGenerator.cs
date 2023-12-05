@@ -20,6 +20,19 @@ namespace IFC4.Generators
 
     public static class BldrsAttributeGenerator
     {
+        public static string CleanName(AttributeData data)
+        {
+            string cleanName = data.Name;
+            int lastOfSeparator = Math.Max(cleanName.LastIndexOf('.'), cleanName.LastIndexOf('/'));
+
+            if (lastOfSeparator >= 0)
+            {
+                cleanName = cleanName.Substring(lastOfSeparator + 1);
+            }
+
+            return cleanName;
+        }
+
         public static readonly string[] DeserializationFunctions =
         {
             "stepExtractBoolean",
@@ -38,7 +51,7 @@ namespace IFC4.Generators
 
         public static BldrsStepKind GetAttributeKind(string type, Dictionary<string, TypeData> typesData, bool parentIsSelect = false)
         {
-            if (!typesData.ContainsKey(type))
+            if (!typesData.ContainsKey(type.DesanitizedName()))
             {
                 return type switch
                 {
@@ -50,7 +63,7 @@ namespace IFC4.Generators
                 };
             }
 
-            var typeData = typesData[type];
+            var typeData = typesData[type.DesanitizedName()];
 
             if (typeData is WrapperType wrapper)
             {
@@ -80,7 +93,8 @@ namespace IFC4.Generators
         public static string AttributeDataString(AttributeData data, Dictionary<string, TypeData> typesData)
         {
             var type = data.InnerType;
-            
+            string cleanName = CleanName(data);
+
             if ( typesData.TryGetValue( type, out var typeData ) && typeData is WrapperType wrapper)
             {
                 bool logical = wrapper.Name == "IfcLogical";
@@ -92,11 +106,11 @@ namespace IFC4.Generators
                     logical |= wrapper.Name == "IfcLogical";
                 }
 
-                return $"private {data.Name}_? : {string.Join("", Enumerable.Repeat("Array< ", Math.Max( data.Rank, wrapper.Rank )))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(data.Rank, wrapper.Rank)))}{(data.IsOptional | logical ? " | null" : "")}";
+                return $"private {cleanName}_? : {string.Join("", Enumerable.Repeat("Array< ", Math.Max( data.Rank, wrapper.Rank )))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(data.Rank, wrapper.Rank)))}{(data.IsOptional | logical ? " | null" : "")}";
             }
             else
             {
-                return $"private {data.Name}_? : {data.Type}{(data.IsOptional ? " | null" : "")}";
+                return $"private {cleanName}_? : {data.Type}{(data.IsOptional ? " | null" : "")}";
             }
         }
 
@@ -110,7 +124,7 @@ namespace IFC4.Generators
                 return string.Empty;
             }
 
-            if (!typesData.ContainsKey(type))
+            if (!typesData.ContainsKey(type.DesanitizedName()))
             {
                 return type switch
                 {
@@ -272,7 +286,7 @@ loopStructure.Append(@$"
                 return string.Empty;
             }
 
-            if (!typesData.ContainsKey(type))
+            if (!typesData.ContainsKey(type.DesanitizedName()))
             {
                 string extractor = type switch
                 {
@@ -287,7 +301,7 @@ loopStructure.Append(@$"
                 return $"{assignTo} = {extractor}";
             }
 
-            var typeData = typesData[type];
+            var typeData = typesData[type.DesanitizedName()];
 
             if (typeData is WrapperType wrapper)
             {
@@ -295,11 +309,11 @@ loopStructure.Append(@$"
             }
             else if (typeData is Entity)
             {
-                return @$"{assignTo} = this.extractElement( {vtableOffsset}, {(data.IsOptional ? "true" : "false")}, {type} )";
+                return @$"{assignTo} = this.extractElement( {vtableOffsset}, {(data.IsOptional ? "true" : "false")}, {type.SanitizedName()} )";
             }
             else if (typeData is SelectType select)
             {         
-                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" ).Select(type => $"!( value instanceof {type} )"));
+                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" ).Select(type => $"!( value instanceof {type.SanitizedName()} )"));
                 string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
                 bool hasNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Contains("IfcNullStyle");
@@ -331,7 +345,7 @@ loopStructure.Append(@$"
             }
             else if (typeData is EnumData collection)
             {
-                return $"{assignTo} = this.extractLambda( {vtableOffsset}, {typeData.Name}DeserializeStep, {(data.IsOptional ? "true" : "false")} )";
+                return $"{assignTo} = this.extractLambda( {vtableOffsset}, {typeData.SanitizedName()}DeserializeStep, {(data.IsOptional ? "true" : "false")} )";
             
             }
 
@@ -340,7 +354,7 @@ loopStructure.Append(@$"
 
         public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric, HashSet< string > importFunctions )
         {
-            if (/*(data.IsDerived && !data.HidesParentAttributeOfSameName) ||*/ data.IsInverse)
+            if ( (!data.IsDerived && data.HidesParentAttributeOfSameName) || data.IsInverse)
             {
                 return "";
             }
@@ -365,6 +379,8 @@ loopStructure.Append(@$"
                 propertyTypeString = $"{ data.Type }{ (data.IsOptional ? " | null" : string.Empty)}";
             }
 
+            string cleanName = CleanName( data );
+
             if (data.IsDerived)
             {
                 string transformedExpression = BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression, importFunctions);
@@ -375,12 +391,12 @@ loopStructure.Append(@$"
                 }
 
                 return $@"
-  public get {data.Name}() : {propertyTypeString} {{
+  public get {cleanName}() : {propertyTypeString} {{
     return {transformedExpression}
   }}";
             }
 
-            string deserialization = Deserialization(data, $"this.{data.Name}_", vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric);
+            string deserialization = Deserialization(data, $"this.{cleanName}_", vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric);
 
             foreach (string deserializationFunction in DeserializationFunctions)
             {
@@ -391,12 +407,12 @@ loopStructure.Append(@$"
             }
 
             return $@"
-  public get {data.Name}() : {propertyTypeString} {{
-    if ( this.{data.Name}_ === void 0 ) {{
+  public get {cleanName}() : {propertyTypeString} {{
+    if ( this.{cleanName}_ === void 0 ) {{
       {deserialization}
     }}
 
-    return this.{data.Name}_ as {propertyTypeString}
+    return this.{cleanName}_ as {propertyTypeString}
   }}";
         }
     }

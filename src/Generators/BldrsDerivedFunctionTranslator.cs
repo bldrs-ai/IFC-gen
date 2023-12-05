@@ -114,7 +114,9 @@ namespace IFC4.Generators
 
                     if (c == '.')
                     {
-                        string run = input.Substring(runStart, index - runStart);
+                        int runBslash = input.IndexOf('\\', runStart, index - runStart) - runStart;
+                        int runEnd = runBslash >= 0 ? runBslash : ( index - runStart);
+                        string run = input.Substring(runStart, runEnd);
 
                         if (run.Trim() == "SELF")
                         {
@@ -142,7 +144,9 @@ namespace IFC4.Generators
                     }
                     else if (c == ',' || c == ')' || c == ';')
                     {
-                        string run = input.Substring(runStart, index - runStart);
+                        int runBslash = input.IndexOf('\\', runStart, index - runStart) - runStart;
+                        int runEnd = runBslash >= 0 ? runBslash : ( index - runStart);
+                        string run = input.Substring(runStart, runEnd);
 
                         if (run.TrimEnd() == "SELF")
                         {
@@ -162,7 +166,9 @@ namespace IFC4.Generators
                     }
                     else if (c == '(')
                     {
-                        string run = input.Substring(runStart, index - runStart);
+                        int runBslash = input.IndexOf('\\', runStart, index - runStart) - runStart;
+                        int runEnd = runBslash >= 0 ? runBslash : ( index - runStart);
+                        string run = input.Substring(runStart, runEnd);
 
                         result.Append(run);
                         result.Append(c);
