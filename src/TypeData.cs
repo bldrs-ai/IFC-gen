@@ -145,7 +145,7 @@ namespace Express
             // A derived attribute which replaces a base class's version of
             // the attribute will have a name that is a path to the 
             // parent class' attribute of the form SELF\IfcNamedUnit.Dimensions.
-            if (isDerived && name.Contains("SELF\\"))
+            if (/*isDerived &&*/ name.Contains("SELF\\"))
             {
                 HidesParentAttributeOfSameName = true;
                 Name = Name.Split('.').Last();

@@ -222,7 +222,7 @@ export {modifiers} class {data.SanitizedName()} extends {superClass} {{
   public get type(): EntityTypesIfc {{
     return EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
   }}
-{String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived).Select( attribute => $"  {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)}" ))}
+{String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived && !attribute.HidesParentAttributeOfSameName).Select( attribute => $"  {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)}" ))}
 {propertyBuilder.ToString()}
   constructor(
     localID: number,
