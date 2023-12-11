@@ -126,6 +126,28 @@ namespace IFC4.Generators
             "IfcGetBasisSurface"
         };
 
+        public static readonly string[] AP214IntrinsicFunctions =
+        {
+            "make_array_of_array",
+            "list_to_array",
+            "dimensions_for_si_unit",
+            "conditional_reverse",
+            "get_basis_surface",
+            "boolean_choose",
+            "build_2axes",
+            "build_axes",
+            "is_sql_mappable",
+            "is_int_expr",
+            "representation_of_link",
+            "get_name_value",
+            "get_id_value",
+            "get_description_value",
+            "get_multi_language",
+            "derive_dimensional_exponents",
+            "dimension_of",
+            "get_role"
+        };
+
         public static void AddDependentFunctions( StringBuilder importBuilder, string[] functions, HashSet< string > importList, string fromFile )
         {
             bool firstFunction = true;
@@ -206,6 +228,7 @@ namespace IFC4.Generators
 
             AddDependentFunctions(importBuilder, StepDeserializationFunctions, importList, "../../step/parsing/step_deserialization_functions");
             AddDependentFunctions(importBuilder, IfcIntrinsicFunctions, importList, "../ifc_functions");
+            AddDependentFunctions(importBuilder, AP214IntrinsicFunctions, importList, "../ap214_functions");
 
             var result =
 $@"
@@ -231,7 +254,7 @@ export {modifiers} class {data.SanitizedName()} extends {superClass} {{
     super( localID, internalReference, model )
   }}
 
-  public static readonly query = 
+  public static readonly query{(data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Count() == 0 ? ": EntityTypesIfc[]" : "")} = 
     [ { string.Join( ", ", data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Select( childEntity => $"EntityTypesIfc.{childEntity.SanitizedName().ToUpperInvariant()}" ) ) } ]
 
   public static readonly expectedType: EntityTypesIfc =
