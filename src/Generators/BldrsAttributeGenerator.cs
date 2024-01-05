@@ -156,22 +156,47 @@ namespace IFC4.Generators
             }
             else if (typeData is SelectType select)
             {
-
-                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where(type => type != "IfcNullStyle").Select(type => $"!( {valueName}Untyped instanceof {type} )"));
+                EnumData[] enums = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Select(type => typesData.GetValueOrDefault(type) as EnumData).Where(type => type != null).ToArray();
+                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where(type => type != "IfcNullStyle" && type != "null_style" && typesData.GetValueOrDefault(type) is not EnumData).Select(type => $"!( {valueName}Untyped instanceof {type} )"));
                 string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
-                bool hasNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Contains("IfcNullStyle");
+                bool hasIfcNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "IfcNullStyle");
+                bool hasNormalNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "null_style");
 
                 string nullStyle = "";
 
-                if (hasNullStyle)
+                bool hasEnums = enums.Length > 0;
+                StringBuilder enumStyle = new StringBuilder();
+
+                string enumTypes = string.Join(" | ", enums.Select(enumType => enumType.SanitizedName()));
+
+                if (hasEnums)
                 {
-                    instanceCheck += $" && ({valueName}Untyped !== IfcNullStyle.NULL)";
+                    enumStyle.Append($@"
+      const {valueName}Enum : {enumTypes} | null =");
+                    bool first = true;
+
+                    foreach (EnumData enumData in enums)
+                    {
+                        enumStyle.Append($@"{(!first ? " ??" : "")}
+    {indent}{enumData.SanitizedName()}DeserializeStep( buffer, cursor, endCursor )");
+                    }
+                }
+
+                if (hasIfcNullStyle)
+                {
+                    instanceCheck += $" && {valueName}Untyped !== IfcNullStyle.NULL";
                     nullStyle = " ?? IfcNullStyleDeserializeStep( buffer, cursor, endCursor )";
                 }
 
+                if (hasNormalNullStyle)
+                {
+                    instanceCheck += $" && {valueName}Untyped !== null_style.NULL";
+                    nullStyle = " ?? null_styleDeserializeStep( buffer, cursor, endCursor )";
+                }
+
                 return @$"
-    {indent}const {valueName}Untyped : StepEntityBase< EntityTypesIfc >{(hasNullStyle ? " | IfcNullStyle" : "")} | undefined =
+    {indent}const {valueName}Untyped : StepEntityBase< EntityTypesIfc >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(hasEnums ? " | " + enumTypes : "")} | undefined = {(hasEnums ? $"{valueName}Enum ?? " : "")}
       {indent}this.extractBufferReference( buffer, cursor, endCursor ){nullStyle}
 
     {indent}if ( {instanceCheck} ) {{
@@ -312,31 +337,56 @@ loopStructure.Append(@$"
                 return @$"{assignTo} = this.extractElement( {vtableOffsset}, {(data.IsOptional ? "true" : "false")}, {type.SanitizedName()} )";
             }
             else if (typeData is SelectType select)
-            {         
-                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" ).Select(type => $"!( value instanceof {type.SanitizedName()} )"));
+            {
+                EnumData[] enums = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Select(type => typesData.GetValueOrDefault(type) as EnumData).Where( type => type != null).ToArray();
+                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" && type != "null_style" && typesData.GetValueOrDefault( type ) is not EnumData).Select(type => $"!( value instanceof {type.SanitizedName()} )"));
                 string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
-                bool hasNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Contains("IfcNullStyle");
+                bool hasIfcNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any( type => type == "IfcNullStyle" );
+                bool hasNormalNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "null_style");
 
                 string nullStyle = "";
 
-                if ( hasNullStyle )
+                bool hasEnums = enums.Length > 0;
+                StringBuilder enumStyle = new StringBuilder();
+
+                string enumTypes = string.Join(" | ", enums.Select(enumType => enumType.SanitizedName()));
+
+                if ( hasEnums )
+                {
+                    enumStyle.Append($@"
+      const enumValue : {enumTypes} | null =");
+                    bool first = true;
+
+                    foreach ( EnumData enumData in enums )
+                    {
+                        enumStyle.Append($@"{(!first ? " ??" : "")}
+        this.extractLambda( {vtableOffsset}, {enumData.SanitizedName()}DeserializeStep, true )");
+                    }
+                }
+
+                if (hasIfcNullStyle)
                 {
                     instanceCheck += " && value !== IfcNullStyle.NULL";
                     nullStyle = " ?? IfcNullStyleDeserializeStep( buffer, cursor, endCursor )";
                 }
-        
-                if (data.IsOptional)
+
+                if (hasNormalNullStyle)
+                {
+                    instanceCheck += " && value !== null_style.NULL";
+                    nullStyle = " ?? null_styleDeserializeStep( buffer, cursor, endCursor )";
+                }
+
+                if ( data.IsOptional )
                 {
                     instanceCheck += " && value !== null";
                 }
 
-
-                return @$"
-      const value : StepEntityBase< EntityTypesIfc >{(hasNullStyle ? " | IfcNullStyle" : "")}{(data.IsOptional ? "| null" : "")} =
+                return @$"{enumStyle}
+      const value : StepEntityBase< EntityTypesIfc >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(data.IsOptional ? "| null" : "")}{(hasEnums ? " | " + enumTypes : "")} = {(hasEnums ? "enumValue ?? " : "")}
         this.extractReference( {vtableOffsset}, {(data.IsOptional ? "true" : "false")} ){nullStyle}
 
-      if ( {instanceCheck} ) {{
+      if ( {(hasEnums ? "enumValue === null && " : "")}{instanceCheck} ) {{
         throw new Error( 'Value in STEP was incorrectly typed for field' )
       }}
 
