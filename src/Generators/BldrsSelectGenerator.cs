@@ -17,7 +17,7 @@ namespace IFC4.Generators
                 return new List<string> { baseType };
             }
 
-            var values = selectTypes[baseType].Values;
+            var values = selectTypes[baseType].Values.Select( data => data.SanitizedName() );
             var result = new List<string>();
 
             foreach (var v in values)

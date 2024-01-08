@@ -141,7 +141,7 @@ namespace IFC4.Generators
 
         public void GenerateManifest(string directory, IEnumerable<string> types)
         {
-            var componentTypeNames = Enumerable.Concat( componentTypes_.Select(type => type.Name), wrappedTypes_.Select( type => type.Name ) );
+            var componentTypeNames = Enumerable.Concat( componentTypes_.Select(type => type.SanitizedName()), wrappedTypes_.Select( type => type.SanitizedName()) );
             var abstractTypeNames = Enumerable.Concat( componentTypes_.Select(type => type.IsAbstract), wrappedTypes_.Select( type => false ) );
 
             BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames, TypesData, SelectData);

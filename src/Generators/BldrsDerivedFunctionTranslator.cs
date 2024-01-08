@@ -61,7 +61,25 @@ namespace IFC4.Generators
             "IfcVectorDifference",
             "IfcVectorSum",
             "IfcPointListDim",
-            "IfcGetBasisSurface"
+            "IfcGetBasisSurface",
+            "make_array_of_array",
+            "list_to_array",
+            "dimensions_for_si_unit",
+            "conditional_reverse",
+            "get_basis_surface",
+            "boolean_choose",
+            "build_2axes",
+            "build_axes",
+            "is_sql_mappable",
+            "is_int_expr",
+            "representation_of_link",
+            "get_name_value",
+            "get_id_value",
+            "get_description_value",
+            "get_multi_language",
+            "derive_dimensional_exponents",
+            "dimension_of",
+            "get_role"
         };
 
         public static string TransformDerivedFunctionToTS( string input, HashSet< string > importFunctions )
@@ -114,7 +132,9 @@ namespace IFC4.Generators
 
                     if (c == '.')
                     {
-                        string run = input.Substring(runStart, index - runStart);
+                        int runBslash = input.IndexOf('\\', runStart, index - runStart) - runStart;
+                        int runEnd = runBslash >= 0 ? runBslash : ( index - runStart);
+                        string run = input.Substring(runStart, runEnd);
 
                         if (run.Trim() == "SELF")
                         {
@@ -142,7 +162,9 @@ namespace IFC4.Generators
                     }
                     else if (c == ',' || c == ')' || c == ';')
                     {
-                        string run = input.Substring(runStart, index - runStart);
+                        int runBslash = input.IndexOf('\\', runStart, index - runStart) - runStart;
+                        int runEnd = runBslash >= 0 ? runBslash : ( index - runStart);
+                        string run = input.Substring(runStart, runEnd);
 
                         if (run.TrimEnd() == "SELF")
                         {
@@ -162,7 +184,9 @@ namespace IFC4.Generators
                     }
                     else if (c == '(')
                     {
-                        string run = input.Substring(runStart, index - runStart);
+                        int runBslash = input.IndexOf('\\', runStart, index - runStart) - runStart;
+                        int runEnd = runBslash >= 0 ? runBslash : ( index - runStart);
+                        string run = input.Substring(runStart, runEnd);
 
                         result.Append(run);
                         result.Append(c);

@@ -42,12 +42,12 @@ namespace IFC4.Generators
         {
             foreach ( string name in typesData.Where(nameType => { return nameType.Value is EnumData && !(nameType.Value is SelectType); }).OrderBy(nameType => nameType.Key).Select( nameType => nameType.Key ) )
             { 
-                output.AppendLine($"export {{ {name}, {name}DeserializeStep }} from './{name}.gen'");
+                output.AppendLine($"export {{ {name}, {name}DeserializeStep }} from './{name.DesanitizedName()}.gen'");
             }
 
             foreach ( string name in Names.OrderBy( name =>
                 {
-                    var typeData = typesData[name];
+                    var typeData = typesData[name.DesanitizedName()];
 
                     if (typeData is Entity entity)
                     {
@@ -58,7 +58,7 @@ namespace IFC4.Generators
 
                 }))
             {
-                output.AppendLine($"export {{ {name} }} from './{name}.gen'");
+                output.AppendLine($"export {{ {name} }} from './{name.DesanitizedName()}.gen'");
             }
         }
 
@@ -134,19 +134,21 @@ namespace IFC4.Generators
 
             foreach ( var attribute in entity.Attributes )
             {
-                output.Append($"{attributeIndent}{attribute.Name}: ");
+                string cleanName = BldrsAttributeGenerator.CleanName(attribute);
+
+                output.Append($"{attributeIndent}{cleanName}: ");
 
                 GenerateAttributeDescription(output, attribute.type, typesData, selectTypes, attributeIndent, attribute.IsOptional, attribute.IsDerived, attribute.IsCollection, attribute.Rank, false, baseFieldOffset++);
             }
 
             output.AppendLine($"{indent}  }},");
-            output.AppendLine($"{indent}  typeId: e.{entity.Name.ToUpperInvariant()},");
+            output.AppendLine($"{indent}  typeId: e.{entity.SanitizedName().ToUpperInvariant()},");
             output.AppendLine($"{indent}  isAbstract: {(entity.IsAbstract ? "true" : "false")},");
 
             // The terminology for IFC-gen is actually backwards re super and sub-types.
             if ( entity.Subs.Count > 0 )
             {
-                output.AppendLine($"{indent}  superType: e.{entity.Subs[0].Name.ToUpperInvariant()},");
+                output.AppendLine($"{indent}  superType: e.{entity.Subs[0].SanitizedName().ToUpperInvariant()},");
             }
             
             if (entity.Supers.Count > 0)
@@ -155,7 +157,7 @@ namespace IFC4.Generators
 
                 foreach (var super in entity.Supers)
                 {
-                    output.AppendLine($"{indent}     e.{super.Name.ToUpperInvariant()},");
+                    output.AppendLine($"{indent}     e.{super.SanitizedName().ToUpperInvariant()},");
                 }
 
                 output.AppendLine($"{indent}  ],");
@@ -177,7 +179,7 @@ namespace IFC4.Generators
             GenerateAttributeDescription(output, wrapperType.WrappedType, typesData, selectTypes, attributeIndent, false, false, wrapperType.IsCollectionType, wrapperType.Rank, false, 0);
 
             output.AppendLine($"{indent}  }},");
-            output.AppendLine($"{indent}  typeId: e.{wrapperType.Name.ToUpperInvariant()},");
+            output.AppendLine($"{indent}  typeId: e.{wrapperType.SanitizedName().ToUpperInvariant()},");
             output.AppendLine($"{indent}  isAbstract: false,");
             output.AppendLine($"{indent}}},");
         }
@@ -208,7 +210,7 @@ namespace IFC4.Generators
 
             foreach ( var enumType in typesData.Values.Where( type => type is EnumData && !(type is SelectType)).Select( type => type as EnumData).OrderBy( type => type.Name ) )
             {
-                output.AppendLine($"{indent0}import {{ {enumType.Name} }} from './index'");
+                output.AppendLine($"{indent0}import {{ {enumType.SanitizedName()} }} from './index'");
             }
 
             output.AppendLine($"{indent0}let constructors : ( StepEntityConstructor< {entityTypesName}, StepEntityBase< {entityTypesName} > > | undefined )[]  = [");
@@ -248,7 +250,7 @@ namespace IFC4.Generators
             {
                 string localName = Names[where];
 
-                var typeData = typesData[localName];
+                var typeData = typesData[localName.DesanitizedName()];
 
                 if (typeData is Entity entity)
                 {

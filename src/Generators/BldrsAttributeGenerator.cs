@@ -20,6 +20,19 @@ namespace IFC4.Generators
 
     public static class BldrsAttributeGenerator
     {
+        public static string CleanName(AttributeData data)
+        {
+            string cleanName = data.Name;
+            int lastOfSeparator = Math.Max(cleanName.LastIndexOf('.'), cleanName.LastIndexOf('/'));
+
+            if (lastOfSeparator >= 0)
+            {
+                cleanName = cleanName.Substring(lastOfSeparator + 1);
+            }
+
+            return cleanName;
+        }
+
         public static readonly string[] DeserializationFunctions =
         {
             "stepExtractBoolean",
@@ -38,7 +51,7 @@ namespace IFC4.Generators
 
         public static BldrsStepKind GetAttributeKind(string type, Dictionary<string, TypeData> typesData, bool parentIsSelect = false)
         {
-            if (!typesData.ContainsKey(type))
+            if (!typesData.ContainsKey(type.DesanitizedName()))
             {
                 return type switch
                 {
@@ -50,7 +63,7 @@ namespace IFC4.Generators
                 };
             }
 
-            var typeData = typesData[type];
+            var typeData = typesData[type.DesanitizedName()];
 
             if (typeData is WrapperType wrapper)
             {
@@ -80,7 +93,8 @@ namespace IFC4.Generators
         public static string AttributeDataString(AttributeData data, Dictionary<string, TypeData> typesData)
         {
             var type = data.InnerType;
-            
+            string cleanName = CleanName(data);
+
             if ( typesData.TryGetValue( type, out var typeData ) && typeData is WrapperType wrapper)
             {
                 bool logical = wrapper.Name == "IfcLogical";
@@ -92,11 +106,11 @@ namespace IFC4.Generators
                     logical |= wrapper.Name == "IfcLogical";
                 }
 
-                return $"private {data.Name}_? : {string.Join("", Enumerable.Repeat("Array< ", Math.Max( data.Rank, wrapper.Rank )))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(data.Rank, wrapper.Rank)))}{(data.IsOptional | logical ? " | null" : "")}";
+                return $"private {cleanName}_? : {string.Join("", Enumerable.Repeat("Array< ", Math.Max( data.Rank, wrapper.Rank )))}{ wrapper.WrappedType }{string.Join("", Enumerable.Repeat(" >", Math.Max(data.Rank, wrapper.Rank)))}{(data.IsOptional | logical ? " | null" : "")}";
             }
             else
             {
-                return $"private {data.Name}_? : {data.Type}{(data.IsOptional ? " | null" : "")}";
+                return $"private {cleanName}_? : {data.Type}{(data.IsOptional ? " | null" : "")}";
             }
         }
 
@@ -110,7 +124,7 @@ namespace IFC4.Generators
                 return string.Empty;
             }
 
-            if (!typesData.ContainsKey(type))
+            if (!typesData.ContainsKey(type.DesanitizedName()))
             {
                 return type switch
                 {
@@ -142,22 +156,47 @@ namespace IFC4.Generators
             }
             else if (typeData is SelectType select)
             {
-
-                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where(type => type != "IfcNullStyle").Select(type => $"!( {valueName}Untyped instanceof {type} )"));
+                EnumData[] enums = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Select(type => typesData.GetValueOrDefault(type) as EnumData).Where(type => type != null).ToArray();
+                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where(type => type != "IfcNullStyle" && type != "null_style" && typesData.GetValueOrDefault(type) is not EnumData).Select(type => $"!( {valueName}Untyped instanceof {type} )"));
                 string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
-                bool hasNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Contains("IfcNullStyle");
+                bool hasIfcNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "IfcNullStyle");
+                bool hasNormalNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "null_style");
 
                 string nullStyle = "";
 
-                if (hasNullStyle)
+                bool hasEnums = enums.Length > 0;
+                StringBuilder enumStyle = new StringBuilder();
+
+                string enumTypes = string.Join(" | ", enums.Select(enumType => enumType.SanitizedName()));
+
+                if (hasEnums)
                 {
-                    instanceCheck += $" && ({valueName}Untyped !== IfcNullStyle.NULL)";
+                    enumStyle.Append($@"
+      const {valueName}Enum : {enumTypes} | null =");
+                    bool first = true;
+
+                    foreach (EnumData enumData in enums)
+                    {
+                        enumStyle.Append($@"{(!first ? " ??" : "")}
+    {indent}{enumData.SanitizedName()}DeserializeStep( buffer, cursor, endCursor )");
+                    }
+                }
+
+                if (hasIfcNullStyle)
+                {
+                    instanceCheck += $" && {valueName}Untyped !== IfcNullStyle.NULL";
                     nullStyle = " ?? IfcNullStyleDeserializeStep( buffer, cursor, endCursor )";
                 }
 
+                if (hasNormalNullStyle)
+                {
+                    instanceCheck += $" && {valueName}Untyped !== null_style.NULL";
+                    nullStyle = " ?? null_styleDeserializeStep( buffer, cursor, endCursor )";
+                }
+
                 return @$"
-    {indent}const {valueName}Untyped : StepEntityBase< EntityTypesIfc >{(hasNullStyle ? " | IfcNullStyle" : "")} | undefined =
+    {indent}const {valueName}Untyped : StepEntityBase< EntityTypesIfc >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(hasEnums ? " | " + enumTypes : "")} | undefined = {(hasEnums ? $"{valueName}Enum ?? " : "")}
       {indent}this.extractBufferReference( buffer, cursor, endCursor ){nullStyle}
 
     {indent}if ( {instanceCheck} ) {{
@@ -272,7 +311,7 @@ loopStructure.Append(@$"
                 return string.Empty;
             }
 
-            if (!typesData.ContainsKey(type))
+            if (!typesData.ContainsKey(type.DesanitizedName()))
             {
                 string extractor = type switch
                 {
@@ -287,7 +326,7 @@ loopStructure.Append(@$"
                 return $"{assignTo} = {extractor}";
             }
 
-            var typeData = typesData[type];
+            var typeData = typesData[type.DesanitizedName()];
 
             if (typeData is WrapperType wrapper)
             {
@@ -295,34 +334,59 @@ loopStructure.Append(@$"
             }
             else if (typeData is Entity)
             {
-                return @$"{assignTo} = this.extractElement( {vtableOffsset}, {(data.IsOptional ? "true" : "false")}, {type} )";
+                return @$"{assignTo} = this.extractElement( {vtableOffsset}, {(data.IsOptional ? "true" : "false")}, {type.SanitizedName()} )";
             }
             else if (typeData is SelectType select)
-            {         
-                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" ).Select(type => $"!( value instanceof {type} )"));
+            {
+                EnumData[] enums = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Select(type => typesData.GetValueOrDefault(type) as EnumData).Where( type => type != null).ToArray();
+                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" && type != "null_style" && typesData.GetValueOrDefault( type ) is not EnumData).Select(type => $"!( value instanceof {type.SanitizedName()} )"));
                 string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
-                bool hasNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Contains("IfcNullStyle");
+                bool hasIfcNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any( type => type == "IfcNullStyle" );
+                bool hasNormalNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "null_style");
 
                 string nullStyle = "";
 
-                if ( hasNullStyle )
+                bool hasEnums = enums.Length > 0;
+                StringBuilder enumStyle = new StringBuilder();
+
+                string enumTypes = string.Join(" | ", enums.Select(enumType => enumType.SanitizedName()));
+
+                if ( hasEnums )
+                {
+                    enumStyle.Append($@"
+      const enumValue : {enumTypes} | null =");
+                    bool first = true;
+
+                    foreach ( EnumData enumData in enums )
+                    {
+                        enumStyle.Append($@"{(!first ? " ??" : "")}
+        this.extractLambda( {vtableOffsset}, {enumData.SanitizedName()}DeserializeStep, true )");
+                    }
+                }
+
+                if (hasIfcNullStyle)
                 {
                     instanceCheck += " && value !== IfcNullStyle.NULL";
                     nullStyle = " ?? IfcNullStyleDeserializeStep( buffer, cursor, endCursor )";
                 }
-        
-                if (data.IsOptional)
+
+                if (hasNormalNullStyle)
+                {
+                    instanceCheck += " && value !== null_style.NULL";
+                    nullStyle = " ?? null_styleDeserializeStep( buffer, cursor, endCursor )";
+                }
+
+                if ( data.IsOptional )
                 {
                     instanceCheck += " && value !== null";
                 }
 
-
-                return @$"
-      const value : StepEntityBase< EntityTypesIfc >{(hasNullStyle ? " | IfcNullStyle" : "")}{(data.IsOptional ? "| null" : "")} =
+                return @$"{enumStyle}
+      const value : StepEntityBase< EntityTypesIfc >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(data.IsOptional ? "| null" : "")}{(hasEnums ? " | " + enumTypes : "")} = {(hasEnums ? "enumValue ?? " : "")}
         this.extractReference( {vtableOffsset}, {(data.IsOptional ? "true" : "false")} ){nullStyle}
 
-      if ( {instanceCheck} ) {{
+      if ( {(hasEnums ? "enumValue === null && " : "")}{instanceCheck} ) {{
         throw new Error( 'Value in STEP was incorrectly typed for field' )
       }}
 
@@ -331,7 +395,7 @@ loopStructure.Append(@$"
             }
             else if (typeData is EnumData collection)
             {
-                return $"{assignTo} = this.extractLambda( {vtableOffsset}, {typeData.Name}DeserializeStep, {(data.IsOptional ? "true" : "false")} )";
+                return $"{assignTo} = this.extractLambda( {vtableOffsset}, {typeData.SanitizedName()}DeserializeStep, {(data.IsOptional ? "true" : "false")} )";
             
             }
 
@@ -340,7 +404,7 @@ loopStructure.Append(@$"
 
         public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric, HashSet< string > importFunctions )
         {
-            if (/*(data.IsDerived && !data.HidesParentAttributeOfSameName) ||*/ data.IsInverse)
+            if ( (!data.IsDerived && data.HidesParentAttributeOfSameName) || data.IsInverse)
             {
                 return "";
             }
@@ -365,6 +429,8 @@ loopStructure.Append(@$"
                 propertyTypeString = $"{ data.Type }{ (data.IsOptional ? " | null" : string.Empty)}";
             }
 
+            string cleanName = CleanName( data );
+
             if (data.IsDerived)
             {
                 string transformedExpression = BldrsDerivedFunctionTranslator.TransformDerivedFunctionToTS(data.DerivedExpression, importFunctions);
@@ -375,12 +441,12 @@ loopStructure.Append(@$"
                 }
 
                 return $@"
-  public get {data.Name}() : {propertyTypeString} {{
+  public get {cleanName}() : {propertyTypeString} {{
     return {transformedExpression}
   }}";
             }
 
-            string deserialization = Deserialization(data, $"this.{data.Name}_", vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric);
+            string deserialization = Deserialization(data, $"this.{cleanName}_", vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric);
 
             foreach (string deserializationFunction in DeserializationFunctions)
             {
@@ -391,12 +457,12 @@ loopStructure.Append(@$"
             }
 
             return $@"
-  public get {data.Name}() : {propertyTypeString} {{
-    if ( this.{data.Name}_ === void 0 ) {{
+  public get {cleanName}() : {propertyTypeString} {{
+    if ( this.{cleanName}_ === void 0 ) {{
       {deserialization}
     }}
 
-    return this.{data.Name}_ as {propertyTypeString}
+    return this.{cleanName}_ as {propertyTypeString}
   }}";
         }
     }
