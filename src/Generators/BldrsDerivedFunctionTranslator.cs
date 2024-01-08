@@ -84,7 +84,14 @@ namespace IFC4.Generators
 
         public static string TransformDerivedFunctionToTS( string input, HashSet< string > importFunctions )
         {
-            if ( input.Contains( "QUERY") || input.Contains( "<*" ) || input.Contains( "SELF\\" ) || input.Contains("NSegments" ) || input.Contains( "||" ) )
+            if (
+                input.Contains( "QUERY") ||
+                input.Contains( "<*" ) ||
+                input.Contains( "SELF\\" ) ||
+                input.Contains("NSegments" ) ||
+                input.Contains("n_segments") ||
+                input.Contains( "||" ) ||
+                input.Contains( "discontinuous" ) )
             {
                 return "";
             }

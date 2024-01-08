@@ -156,12 +156,27 @@ namespace IFC4.Generators
             }
             else if (typeData is SelectType select)
             {
-                EnumData[] enums = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Select(type => typesData.GetValueOrDefault(type) as EnumData).Where(type => type != null).ToArray();
-                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where(type => type != "IfcNullStyle" && type != "null_style" && typesData.GetValueOrDefault(type) is not EnumData).Select(type => $"!( {valueName}Untyped instanceof {type} )"));
+                EnumData[] enums =
+                    BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                    .Select(type => typesData.GetValueOrDefault(type) as EnumData)
+                    .Where(type => type != null && type.Name != "null_style" && type.Name != "IfcNullStyle").ToArray();
+                string instanceCheck =
+                    string.Join(
+                        " && ",
+                        BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                        .Where(
+                            type => type != "IfcNullStyle" &&
+                                type != "null_style" &&
+                                typesData.GetValueOrDefault(type) is not EnumData)
+                        .Select(type => $"!( {valueName}Untyped instanceof {type} )"));
                 string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
-                bool hasIfcNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "IfcNullStyle");
-                bool hasNormalNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "null_style");
+                bool hasIfcNullStyle =
+                    BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                    .Any(type => type == "IfcNullStyle");
+                bool hasNormalNullStyle =
+                    BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                    .Any(type => type == "null_style");
 
                 string nullStyle = "";
 
@@ -338,12 +353,27 @@ loopStructure.Append(@$"
             }
             else if (typeData is SelectType select)
             {
-                EnumData[] enums = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Select(type => typesData.GetValueOrDefault(type) as EnumData).Where( type => type != null).ToArray();
-                string instanceCheck = string.Join(" && ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Where( type => type != "IfcNullStyle" && type != "null_style" && typesData.GetValueOrDefault( type ) is not EnumData).Select(type => $"!( value instanceof {type.SanitizedName()} )"));
+                EnumData[] enums =
+                    BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                    .Select(type => typesData.GetValueOrDefault(type) as EnumData)
+                    .Where( type => type != null && type.Name != "null_style" && type.Name != "IfcNullStyle").ToArray();
+                string instanceCheck = 
+                    string.Join(
+                        " && ", 
+                        BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                        .Where( 
+                            type => type != "IfcNullStyle" &&
+                            type != "null_style" &&
+                            typesData.GetValueOrDefault( type ) is not EnumData)
+                        .Select(type => $"!( value instanceof {type.SanitizedName()} )"));
                 string cast = $" as ({string.Join(" | ", BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes))})";
 
-                bool hasIfcNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any( type => type == "IfcNullStyle" );
-                bool hasNormalNullStyle = BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes).Any(type => type == "null_style");
+                bool hasIfcNullStyle =
+                    BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                    .Any( type => type == "IfcNullStyle" );
+                bool hasNormalNullStyle =
+                    BldrsSelectGenerator.ExpandPossibleTypes(select.Name, selectTypes)
+                    .Any(type => type == "null_style");
 
                 string nullStyle = "";
 
