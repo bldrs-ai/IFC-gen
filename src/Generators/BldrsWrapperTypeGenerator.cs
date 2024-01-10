@@ -12,7 +12,22 @@ namespace IFC4.Generators
         public static string Generate( BldrsGenerator generator, WrapperType data, Dictionary< string, TypeData > typesData, Dictionary<string, SelectType> selectData)
         {
             var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
-            var wrappedTypeImport = badTypes.Contains(data.WrappedType) ? string.Empty : $"import {{ {data.WrappedType} }} from './index\'";
+            var wrappedTypeImport = new StringBuilder();
+
+            if ( !badTypes.Contains( data.WrappedType) )
+            {
+                foreach (string expandedType in BldrsSelectGenerator.ExpandPossibleTypes(data.WrappedType, selectData))
+                {
+                    if (typesData[expandedType.DesanitizedName()] is EnumType)
+                    {
+                        wrappedTypeImport.AppendLine($"import {{ {expandedType}, {expandedType}DeserializeStep }} from \"./index\"");
+                    }
+                    else
+                    {
+                        wrappedTypeImport.AppendLine($"import {{ {expandedType} }} from \"./index\"");
+                    }
+                }
+            }
 
             AttributeData valueAttribute = new AttributeData(generator, "Value", data.WrappedType, data.Rank, data.IsCollectionType, false, false, false, false);
 
