@@ -29,7 +29,6 @@ namespace IFC4.Generators
 
             PrefixSumEncoded = new int[EncodedNames.Length + 1];
 
-
             PrefixSumEncoded[0] = 0;
 
             for (int where = 0; where < IDTable.Keys.Count; where++)
@@ -47,7 +46,7 @@ namespace IFC4.Generators
 
             foreach ( string name in Names.OrderBy( name =>
                 {
-                    var typeData = typesData[name.DesanitizedName()];
+                    var typeData = typesData.GetValueOrDefault( name.DesanitizedName() );
 
                     if (typeData is Entity entity)
                     {
@@ -58,7 +57,10 @@ namespace IFC4.Generators
 
                 }))
             {
-                output.AppendLine($"export {{ {name} }} from './{name.DesanitizedName()}.gen'");
+                if (name != "ExternalMappingContainer")
+                {
+                    output.AppendLine($"export {{ {name} }} from './{name.DesanitizedName()}.gen'");
+                }
             }
         }
 
@@ -205,7 +207,10 @@ namespace IFC4.Generators
             {
                 string localName = Names[where];
 
-                output.AppendLine($"{indent0}import {{ {localName} }} from './index'");
+                if ( localName != "ExternalMappingContainer" )
+                {
+                    output.AppendLine($"{indent0}import {{ {localName} }} from './index'");
+                }
             }
 
             foreach ( var enumType in typesData.Values.Where( type => type is EnumData && !(type is SelectType)).Select( type => type as EnumData).OrderBy( type => type.Name ) )
@@ -217,7 +222,7 @@ namespace IFC4.Generators
 
             for (int where = 0; where < Names.Length; ++where)  
             {
-                if (!IsAbstract[where])
+                if (!IsAbstract[where] && Names[where] != "ExternalMappingContainer")
                 {
                     string localName = Names[where];
 
@@ -240,7 +245,14 @@ namespace IFC4.Generators
             {
                 string localName = Names[where];
 
-                output.AppendLine($"{indent1}{localName}.query,");
+                if ( localName == "ExternalMappingContainer" )
+                {
+                    output.AppendLine($"{indent1}[ {entityTypesName}.EXTERNALMAPPINGCONTAINER ],");
+                }
+                else
+                {
+                    output.AppendLine($"{indent1}{localName}.query,");
+                }
             }
 
             output.AppendLine($"{indent0}]");
@@ -250,7 +262,7 @@ namespace IFC4.Generators
             {
                 string localName = Names[where];
 
-                var typeData = typesData[localName.DesanitizedName()];
+                var typeData = typesData.GetValueOrDefault(localName.DesanitizedName());
 
                 if (typeData is Entity entity)
                 {
@@ -259,6 +271,15 @@ namespace IFC4.Generators
                 else if (typeData is WrapperType wrapper)
                 {
                     GenerateWrappedDescription(output, wrapper, typesData, selectTypes, indent1);
+                }
+                else
+                {
+                    output.AppendLine($"{indent1}{{");
+                    output.AppendLine($"{indent1}  fields: {{");
+                    output.AppendLine($"{indent1}  }},");
+                    output.AppendLine($"{indent1}  typeId: e.EXTERNALMAPPINGCONTAINER,");
+                    output.AppendLine($"{indent1}  isAbstract: false,");
+                    output.AppendLine($"{indent1}}},");
                 }
             }
 

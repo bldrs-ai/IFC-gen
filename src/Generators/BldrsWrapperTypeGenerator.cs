@@ -72,8 +72,8 @@ export class {data.SanitizedName()} extends StepEntityBase< EntityTypesIfc > {{
   public static readonly expectedType: EntityTypesIfc =
     EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
 }}
-";            return result;
-
+";            
+            return result;
         }
 
     }
