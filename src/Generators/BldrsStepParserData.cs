@@ -13,8 +13,13 @@ namespace IFC4.Generators
         
         public static void GenerateTypeIDFiles(string directory, IEnumerable<string> types, IEnumerable<bool> isAbstract, Dictionary< string, TypeData > typesData, Dictionary<string, SelectType> selectTypes)
         {
-            var typeIDs = new BlrdrsTypeIDGenerator(types, isAbstract);
-
+            var typeIDs =
+                new BlrdrsTypeIDGenerator(
+                    Enumerable.Concat(
+                        Enumerable.Repeat("ExternalMappingContainer", 1), types),
+                    Enumerable.Concat(
+                        Enumerable.Repeat(false, 1),
+                        isAbstract));
 
             var enumFileName = "entity_types_ifc.gen";
             var enumPath = Path.Combine(directory, enumFileName + ".ts" );
