@@ -114,8 +114,10 @@ namespace IFC4.Generators
             }
         }
 
-        public static string DeserializationInner(AttributeData data, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string type, bool isGeneric, string valueName = "value", string cursorName = "cursor", int indentCount = 0, bool logical = false)
+        public static string DeserializationInner(AttributeData data, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string shortName, string type, bool isGeneric, string valueName = "value", string cursorName = "cursor", int indentCount = 0, bool logical = false)
         {
+            var entityTypesName = $"EntityTypes{shortName}";
+            var shortNameLC = shortName.ToLowerInvariant();
             string indent = new string(' ', indentCount * 2);
 
             // Item is used in functions.
@@ -147,7 +149,7 @@ namespace IFC4.Generators
 
             if (typeData is WrapperType wrapper)
             {
-                return DeserializationInner(data, typesData, selectTypes, wrapper.WrappedType, isGeneric, valueName, cursorName, indentCount, wrapper.Name == "IfcLogical");
+                return DeserializationInner(data, typesData, selectTypes, shortName, wrapper.WrappedType, isGeneric, valueName, cursorName, indentCount, wrapper.Name == "IfcLogical");
             }
             else if (typeData is Entity)
             {
@@ -211,7 +213,7 @@ namespace IFC4.Generators
                 }
 
                 return @$"
-    {indent}const {valueName}Untyped : StepEntityBase< EntityTypesIfc >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(hasEnums ? " | " + enumTypes : "")} | undefined = {(hasEnums ? $"{valueName}Enum ?? " : "")}
+    {indent}const {valueName}Untyped : StepEntityBase< {entityTypesName} >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(hasEnums ? " | " + enumTypes : "")} | undefined = {(hasEnums ? $"{valueName}Enum ?? " : "")}
       {indent}this.extractBufferReference( buffer, cursor, endCursor ){nullStyle}
 
     {indent}if ( {instanceCheck} ) {{
@@ -229,8 +231,11 @@ namespace IFC4.Generators
             return "";
         }
 
-        public static string Deserialization(AttributeData data, string assignTo, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, bool isCollection, int rank, string type, bool isGeneric, int indent = 0, bool logical = false)
+        public static string Deserialization(AttributeData data, string assignTo, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, string shortName, bool isCollection, int rank, string type, bool isGeneric, int indent = 0, bool logical = false)
         {
+            var entityTypesName = $"EntityTypes{shortName}";
+            var shortNameLC = shortName.ToLowerInvariant();
+
             if (isCollection)
             {
                 string nullCheck = data.IsOptional ?
@@ -289,7 +294,7 @@ $@"
       {loopIndent}while ( signedCursor{where} >= 0 ) {{");
                 }
 
-                loopStructure.Append( DeserializationInner(data, typesData, selectTypes, type, isGeneric, $"value{rank}", "cursor", (rank + indent + 1), false) );
+                loopStructure.Append( DeserializationInner(data, typesData, selectTypes, shortName, type, isGeneric, $"value{rank}", "cursor", (rank + indent + 1), false) );
 
                 string innerIndent = new string(' ', 2 * (rank + indent));
 
@@ -345,7 +350,7 @@ loopStructure.Append(@$"
 
             if (typeData is WrapperType wrapper)
             {
-                return Deserialization(data, assignTo, vtableOffsset, typesData, selectTypes, wrapper.IsCollectionType, wrapper.Rank, wrapper.WrappedType, isGeneric, indent, wrapper.Name == "IfcLogical");
+                return Deserialization(data, assignTo, vtableOffsset, typesData, selectTypes, shortName, wrapper.IsCollectionType, wrapper.Rank, wrapper.WrappedType, isGeneric, indent, wrapper.Name == "IfcLogical");
             }
             else if (typeData is Entity)
             {
@@ -413,7 +418,7 @@ loopStructure.Append(@$"
                 }
 
                 return @$"{enumStyle}
-      const value : StepEntityBase< EntityTypesIfc >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(data.IsOptional ? "| null" : "")}{(hasEnums ? " | " + enumTypes : "")} = {(hasEnums ? "enumValue ?? " : "")}
+      const value : StepEntityBase< {entityTypesName} >{(hasIfcNullStyle ? " | IfcNullStyle" : "")}{(hasNormalNullStyle ? " | null_style" : "")}{(data.IsOptional ? "| null" : "")}{(hasEnums ? " | " + enumTypes : "")} = {(hasEnums ? "enumValue ?? " : "")}
         this.extractReference( {vtableOffsset}, {(data.IsOptional ? "true" : "false")} ){nullStyle}
 
       if ( {(hasEnums ? "enumValue === null && " : "")}{instanceCheck} ) {{
@@ -432,7 +437,7 @@ loopStructure.Append(@$"
             return "";
         }
 
-        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric, HashSet< string > importFunctions )
+        public static string AttributePropertyString(AttributeData data, uint vtableOffsset, Dictionary<string, TypeData> typesData, Dictionary<string, SelectType> selectTypes, int rank, string type, bool isGeneric, HashSet< string > importFunctions, string shortName )
         {
             if ( (!data.IsDerived && data.HidesParentAttributeOfSameName) || data.IsInverse)
             {
@@ -476,7 +481,7 @@ loopStructure.Append(@$"
   }}";
             }
 
-            string deserialization = Deserialization(data, $"this.{cleanName}_", vtableOffsset, typesData, selectTypes, data.IsCollection, rank, type, isGeneric);
+            string deserialization = Deserialization(data, $"this.{cleanName}_", vtableOffsset, typesData, selectTypes, shortName, data.IsCollection, rank, type, isGeneric);
 
             foreach (string deserializationFunction in DeserializationFunctions)
             {

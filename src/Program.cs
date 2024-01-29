@@ -21,6 +21,7 @@ namespace IFC.Generate
         private static string expressPath;
         private static bool showHelp;
         private static bool outputTokens;
+        private static string shortName;
 
         static int Main(string[] args)
         {
@@ -35,7 +36,7 @@ namespace IFC.Generate
 
             if (language == "bldrsts")
             {
-                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new BldrsGenerator(),
+                generators.Add(new Tuple<ILanguageGenerator, IFunctionsGenerator>(new BldrsGenerator(shortName),
                     null));
 
             }
@@ -127,6 +128,9 @@ namespace IFC.Generate
 
             [Option('h', "help", Default = false)]
             public bool ShowHelp { get; set; } = false;
+
+            [Option('s', "shortname", HelpText = "The shortname for the schema.", Required = true)]
+            public string ShortName{ get; set; } = "";
         }
 
         private static bool ParseOptions(string[] args)
@@ -141,10 +145,10 @@ namespace IFC.Generate
                     language = options.Language;
                     outputTokens = options.Tokens;
                     showHelp = options.ShowHelp;
+                    shortName = options.ShortName;
 
                     if ( showHelp )
                     {
-
                         return ShowHelp(parserResult);
                     }
 
