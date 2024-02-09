@@ -9,10 +9,11 @@ namespace IFC4.Generators
 {
     public static class BldrsWrapperTypeGenerator
     {
-        public static string Generate( BldrsGenerator generator, WrapperType data, Dictionary< string, TypeData > typesData, Dictionary<string, SelectType> selectData)
+        public static string Generate( BldrsGenerator generator, WrapperType data, Dictionary< string, TypeData > typesData, Dictionary<string, SelectType> selectData, string shortName)
         {
             var badTypes = new List<string> { "boolean", "number", "string", "[Uint8Array, number]" };
             var wrappedTypeImport = new StringBuilder();
+            var shortNameLC = shortName.ToLowerInvariant();
 
             if ( !badTypes.Contains( data.WrappedType) )
             {
@@ -34,26 +35,29 @@ namespace IFC4.Generators
             var importBuilder = new StringBuilder();
             var importList = new HashSet<string>();
 
-            string attributePropertyString = BldrsAttributeGenerator.AttributePropertyString(valueAttribute, 0, typesData, selectData, data.Rank, data.WrappedType, false, importList);
+            string attributePropertyString = BldrsAttributeGenerator.AttributePropertyString(valueAttribute, 0, typesData, selectData, data.Rank, data.WrappedType, false, importList, shortName);
 
             BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.StepDeserializationFunctions, importList, "../../step/parsing/step_deserialization_functions");
-            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.IfcIntrinsicFunctions, importList, "../ifc_functions");
+            BldrsEntityGenerator.AddDependentFunctions(importBuilder, BldrsEntityGenerator.IfcIntrinsicFunctions, importList, $"../{shortNameLC}_functions");
+
+            var entityTypesName = $"EntityTypes{shortName}";
+            var comment = shortName == "Ifc" ? $"http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm" : "";
 
             var result =
 $@"
 /* This is generated code, don't alter */
 {importBuilder.ToString()}{wrappedTypeImport}
-import EntityTypesIfc from './entity_types_ifc.gen'
+import {entityTypesName} from './entity_types_{shortNameLC}.gen'
 import StepEntityInternalReference from '../../step/step_entity_internal_reference'
 import StepEntityBase from '../../step/step_entity_base'
 import StepModelBase from '../../step/step_model_base'
 
 
 ///**
-// * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */
-export class {data.SanitizedName()} extends StepEntityBase< EntityTypesIfc > {{    
-  public get type(): EntityTypesIfc {{
-    return EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
+// * {comment} */
+export class {data.SanitizedName()} extends StepEntityBase< {entityTypesName} > {{    
+  public get type(): {entityTypesName} {{
+    return {entityTypesName}.{data.SanitizedName().ToUpperInvariant()}
   }}
 
   {BldrsAttributeGenerator.AttributeDataString(valueAttribute, typesData)};
@@ -61,16 +65,16 @@ export class {data.SanitizedName()} extends StepEntityBase< EntityTypesIfc > {{
 
   constructor(
       localID: number,
-      internalReference: StepEntityInternalReference< EntityTypesIfc >,
-      model: StepModelBase< EntityTypesIfc, StepEntityBase< EntityTypesIfc > > ) {{
+      internalReference: StepEntityInternalReference< {entityTypesName} >,
+      model: StepModelBase< {entityTypesName}, StepEntityBase< {entityTypesName} > > ) {{
      super( localID, internalReference, model )
   }}
 
   public static readonly query =
-    [ EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()} ]
+    [ {entityTypesName}.{data.SanitizedName().ToUpperInvariant()} ]
 
-  public static readonly expectedType: EntityTypesIfc =
-    EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
+  public static readonly expectedType: {entityTypesName} =
+    {entityTypesName}.{data.SanitizedName().ToUpperInvariant()}
 }}
 ";            
             return result;

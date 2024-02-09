@@ -18,10 +18,13 @@ namespace IFC4.Generators
         /// </summary>
         public Dictionary<string, TypeData> TypesData { get; set; }
 
-        public BldrsGenerator()
+        public BldrsGenerator( string shortName )
         {
             SelectData = new Dictionary<string, SelectType>();
+            ShortName = shortName;
         }
+
+        public string ShortName { get; set; }
 
         public string FileExtension => "gen.ts";
 
@@ -89,14 +92,14 @@ namespace IFC4.Generators
         {
             componentTypes_.Add(data);
 
-            return BldrsEntityGenerator.EntityString( data, SelectData, TypesData );
+            return BldrsEntityGenerator.EntityString( data, SelectData, TypesData, ShortName );
         }
 
         public string SimpleTypeString(WrapperType data)
         {
             wrappedTypes_.Add(data);
 
-            return BldrsWrapperTypeGenerator.Generate( this, data, TypesData, SelectData );
+            return BldrsWrapperTypeGenerator.Generate( this, data, TypesData, SelectData, ShortName );
         }
 
         public string EnumTypeString(EnumType data)
@@ -144,7 +147,7 @@ namespace IFC4.Generators
             var componentTypeNames = Enumerable.Concat( componentTypes_.Select(type => type.SanitizedName()), wrappedTypes_.Select( type => type.SanitizedName()) );
             var abstractTypeNames = Enumerable.Concat( componentTypes_.Select(type => type.IsAbstract), wrappedTypes_.Select( type => false ) );
 
-            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames, TypesData, SelectData);
+            BldrsStepParserData.GenerateTypeIDFiles(directory, componentTypeNames, abstractTypeNames, TypesData, SelectData, ShortName);
         }
         public string SelectTypeString(SelectType data)
         {

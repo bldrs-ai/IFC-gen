@@ -172,11 +172,13 @@ namespace IFC4.Generators
             }
         }
 
-        public static string EntityString(Entity data, Dictionary<string, SelectType> selectData, Dictionary< string, TypeData > typeData )
+        public static string EntityString(Entity data, Dictionary<string, SelectType> selectData, Dictionary< string, TypeData > typeData, string shortName )
           {
             var importBuilder = new StringBuilder();
             var propertyBuilder = new StringBuilder();
             var importList = new HashSet<string>();
+            var entityTypesName = $"EntityTypes{shortName}";
+            var shortNameLC = shortName.ToLowerInvariant();
 
             foreach (var d in Dependencies(data, selectData, typeData))
             {
@@ -192,7 +194,7 @@ namespace IFC4.Generators
 
             var newmod = string.Empty;
 
-            string superClass = "StepEntityBase< EntityTypesIfc >";
+            string superClass = $"StepEntityBase< {entityTypesName} >";
 
             uint baseFieldCount = 0;
 
@@ -218,7 +220,7 @@ namespace IFC4.Generators
 
                 first = false;
 
-                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric, importList) );
+                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric, importList, shortName) );
             }
 
             //        constructors = $@"
@@ -227,38 +229,40 @@ namespace IFC4.Generators
             //}}";
 
             AddDependentFunctions(importBuilder, StepDeserializationFunctions, importList, "../../step/parsing/step_deserialization_functions");
-            AddDependentFunctions(importBuilder, IfcIntrinsicFunctions, importList, "../ifc_functions");
+            AddDependentFunctions(importBuilder, IfcIntrinsicFunctions, importList, $"../{shortNameLC}_functions");
             AddDependentFunctions(importBuilder, AP214IntrinsicFunctions, importList, "../ap214_functions");
+
+            var comment = shortName == "Ifc" ? $"http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm" : "";
 
             var result =
 $@"
 {importBuilder.ToString()}
 /* This is generated code, don't modify */
-import EntityTypesIfc from './entity_types_ifc.gen'
+import {entityTypesName} from './entity_types_{shortNameLC}.gen'
 import StepEntityInternalReference from '../../step/step_entity_internal_reference'
 import StepEntityBase from '../../step/step_entity_base'
 import StepModelBase from '../../step/step_model_base'
 
 ///**
-// * http://www.buildingsmart-tech.org/ifc/ifc4/final/html/link/{data.Name.ToLower()}.htm */
+// * {comment} */
 export {modifiers} class {data.SanitizedName()} extends {superClass} {{
-  public get type(): EntityTypesIfc {{
-    return EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
+  public get type(): {entityTypesName} {{
+    return {entityTypesName}.{data.SanitizedName().ToUpperInvariant()}
   }}
 {String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived && !attribute.HidesParentAttributeOfSameName).Select( attribute => $"  {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)}" ))}
 {propertyBuilder.ToString()}
   constructor(
     localID: number,
-    internalReference: StepEntityInternalReference< EntityTypesIfc >,
-    model: StepModelBase< EntityTypesIfc, StepEntityBase< EntityTypesIfc > > ) {{
+    internalReference: StepEntityInternalReference< {entityTypesName} >,
+    model: StepModelBase< {entityTypesName}, StepEntityBase< {entityTypesName} > > ) {{
     super( localID, internalReference, model )
   }}
 
-  public static readonly query{(data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Count() == 0 ? ": EntityTypesIfc[]" : "")} = 
-    [ { string.Join( ", ", data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Select( childEntity => $"EntityTypesIfc.{childEntity.SanitizedName().ToUpperInvariant()}" ) ) } ]
+  public static readonly query{(data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Count() == 0 ? $": {entityTypesName}[]" : "")} = 
+    [ { string.Join( ", ", data.ChildrenAndSelf().Where( childEntity => !childEntity.IsAbstract ).Select( childEntity => $"{entityTypesName}.{childEntity.SanitizedName().ToUpperInvariant()}" ) ) } ]
 
-  public static readonly expectedType: EntityTypesIfc =
-    EntityTypesIfc.{data.SanitizedName().ToUpperInvariant()}
+  public static readonly expectedType: {entityTypesName} =
+    {entityTypesName}.{data.SanitizedName().ToUpperInvariant()}
 }}
 ";
 

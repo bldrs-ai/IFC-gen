@@ -9,7 +9,7 @@ default:
 	# $(ANTLR) -Dlanguage=CSharp -package Express -o ./src/antlr $(GRAMMAR_IFC)
 	# $(ANTLR) -Dlanguage=CSharp -package STEP -o ./lang/csharp/src/antlr $(GRAMMAR_STEP)
 	dotnet build ./src/IFC-gen.csproj
-	dotnet run --project ./src/IFC-gen.csproj -e $(SCHEMA) -l bldrsts -o $(OUTDIR)
+	dotnet run --project ./src/IFC-gen.csproj -e $(SCHEMA) -l bldrsts -o $(OUTDIR) -s $(SHORTNAME)
 
 generate:
 	$(ANTLR) -Dlanguage=CSharp -package Express -o ./src/antlr $(GRAMMAR_IFC)
