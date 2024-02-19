@@ -9,6 +9,28 @@ namespace IFC4.Generators
 {
     public static class BldrsEntityGenerator
     {
+        public static IEnumerable<Entity> MixinDependencies(Entity data)
+        {
+            if (data.Subs.Count > 1)
+            {
+                var alreadyInherited = data.Subs[0].ParentsAndSelf().ToHashSet();
+
+                foreach (var subs in data.Subs.Skip(1))
+                {
+                    foreach (var inheritedEntity in subs.ParentsAndSelfPackOrder())
+                    {
+                        if (alreadyInherited.Contains(inheritedEntity))
+                        {
+                            continue;
+                        }
+
+                        alreadyInherited.Add(inheritedEntity);
+                        yield return inheritedEntity;
+                    }
+                }
+            }
+        }
+
         public static IEnumerable<string> Dependencies(Entity entity, Dictionary<string, SelectType> selectData, Dictionary<string, TypeData> typesData)
         {
          //   var parents = entity.ParentsAndSelf().Reverse();
@@ -20,6 +42,12 @@ namespace IFC4.Generators
             {
                 result.Add( entity.Subs[ 0 ].SanitizedName() ); // attributes for all super types
             }
+
+            foreach ( var mixin in MixinDependencies( entity ) )
+            {
+                result.AddRange(AddRelevantTypes(mixin.Attributes.Where(attr => /*(!attr.IsDerived || attr.HidesParentAttributeOfSameName) &&*/ !attr.IsInverse), selectData, typesData));
+            }
+
             //result.AddRange(entity.Supers.Select(s => s.Name)); // attributes for all super types
         //    result.AddRange(AddRelevantTypes(attrs, selectData)); // attributes for constructor parameters for parents
             result.AddRange(AddRelevantTypes(entity.Attributes.Where( attr => /*(!attr.IsDerived || attr.HidesParentAttributeOfSameName) &&*/ !attr.IsInverse ), selectData, typesData)); // atributes of self
@@ -198,10 +226,17 @@ namespace IFC4.Generators
 
             uint baseFieldCount = 0;
 
+            var attributeSet = new HashSet<string>();
+
             if (data.Subs.Count > 0)
             {
                 superClass = data.Subs[0].SanitizedName();
                 baseFieldCount = FieldCountWithParents(data.Subs[0]);
+
+                foreach (var sub in data.Subs[0].ParentsAndSelf())
+                {
+                    attributeSet.UnionWith(sub.Attributes.Select( value => value.Name ) );
+                }
             }
 
             string componenttypenames = $"[{string.Join(", ", data.ParentsAndSelf().Select(value => value.SanitizedName()))}]";
@@ -211,16 +246,56 @@ namespace IFC4.Generators
 
             uint fieldVtableIndex = baseFieldCount;
 
-            foreach ( var attribute in data.Attributes )
+            var attributes = new List<AttributeData>();
+
+            foreach (var inheritedEntity in MixinDependencies( data ) )
             {
-                if ( !first )
+                foreach ( var attribute in inheritedEntity.Attributes )
+                {
+                    if ( !first )
+                    {
+                        propertyBuilder.AppendLine();
+                    }
+
+                    if ( attributeSet.Contains( attribute.Name ) )
+                    {
+                        continue;
+                    }
+
+                    attributeSet.Add(attribute.Name);
+
+                    first = false;
+
+                    propertyBuilder.Append(BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric, importList, shortName));
+
+                    if (!attribute.IsDerived && !attribute.IsInverse)
+                    {
+                        ++fieldVtableIndex;
+                    }
+
+                    attributes.Add(attribute);
+                }
+            }
+
+            foreach (var attribute in data.Attributes)
+            {
+                if (!first)
                 {
                     propertyBuilder.AppendLine();
                 }
 
                 first = false;
 
-                propertyBuilder.Append( BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex++, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric, importList, shortName) );
+                attributeSet.Add(attribute.Name);
+
+                propertyBuilder.Append(BldrsAttributeGenerator.AttributePropertyString(attribute, fieldVtableIndex, typeData, selectData, attribute.Rank, attribute.InnerType, attribute.IsGeneric, importList, shortName));
+
+                if (!attribute.IsDerived && !attribute.IsInverse)
+                {
+                    ++fieldVtableIndex;
+                }
+
+                attributes.Add( attribute );
             }
 
             //        constructors = $@"
@@ -249,7 +324,7 @@ export {modifiers} class {data.SanitizedName()} extends {superClass} {{
   public get type(): {entityTypesName} {{
     return {entityTypesName}.{data.SanitizedName().ToUpperInvariant()}
   }}
-{String.Join( '\n', data.Attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived && !attribute.HidesParentAttributeOfSameName).Select( attribute => $"  {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)}" ))}
+{String.Join( '\n', attributes.Where(attribute => !attribute.IsInverse && !attribute.IsDerived && !attribute.HidesParentAttributeOfSameName).Select( attribute => $"  {BldrsAttributeGenerator.AttributeDataString(attribute, typeData)}" ))}
 {propertyBuilder.ToString()}
   constructor(
     localID: number,
