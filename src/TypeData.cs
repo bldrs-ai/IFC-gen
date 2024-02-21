@@ -328,6 +328,39 @@ namespace Express
             return parents;
         }
 
+
+        /// <summary>
+        /// Return all parents to this type all the way to the root.
+        /// </summary>
+        /// <returns></returns>
+        internal IEnumerable<Entity> ParentsPackOrder()
+        {
+            var parents = new List<Entity>();
+
+            foreach (var s in Subs)
+            {
+                parents.AddRange(s.ParentsPackOrder());
+                parents.Add(s);
+            }
+
+            return parents;
+        }
+
+        internal IEnumerable<Entity> ParentsAndSelfPackOrder()
+        {
+            var parents = new List<Entity>();
+
+            foreach (var s in Subs)
+            {
+                parents.AddRange(s.ParentsPackOrder());
+                parents.Add(s);
+            }
+
+            parents.Add(this);
+
+            return parents;
+        }
+
         internal IEnumerable<Entity> Children()
         {
             var parents = new List<Entity>();
@@ -357,6 +390,7 @@ namespace Express
 
             return parents.Distinct();
         }
+
 
         /// <summary>
         /// Determine whether this is the provided type or a sub-type of the provided type.
